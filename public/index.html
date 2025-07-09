@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>MMORPG Tibia-Like</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="hud">
+    <h2>Player</h2>
+    <p>Level: <span id="level">1</span></p>
+    <p>XP: <span id="xp">0</span></p>
+    <p>Ataque: <span id="attack">5</span></p>
+    <p>Defesa: <span id="defense">3</span></p>
+    <p>Velocidade: <span id="speed">150</span>ms</p>
+    <p>Posição: <span id="position">x:25, y:25</span></p>
+  </div>
+  <div id="game-map"></div>
+  <script src="game.js"></script>
+</body>
+</html>
