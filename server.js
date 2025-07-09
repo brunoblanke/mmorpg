@@ -1,17 +1,32 @@
 const express = require('express');
 const path = require('path');
-const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
 
-// ✅ Serve arquivos estáticos da pasta public/
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server); // cria instancia Socket.IO
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Rota principal carrega o index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ✅ Porta do Railway
+// 🔌 Escuta conexões WebSocket
+io.on('connection', (socket) => {
+  console.log('Novo jogador conectado:', socket.id);
+
+  socket.on('move', (pos) => {
+    socket.broadcast.emit('playerMoved', { id: socket.id, pos });
+  });
+
+  socket.on('disconnect', () => {
+    socket.broadcast.emit('playerDisconnected', socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
