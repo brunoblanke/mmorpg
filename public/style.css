@@ -31,8 +31,13 @@ body, html {
 }
 
 .wall { background: #555; }
-.spawn { outline: 2px solid #007bff; }
-.destination { outline: 2px dashed #aaa; }
+.tile.spawn {
+  box-shadow: inset 0 0 0 2px #007bff;
+}
+.tile.destination {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #aaa;
+}
 
 .player {
   background: #d6d6d6;
@@ -48,14 +53,17 @@ body, html {
 
 .name-tag {
   position: absolute;
-  top: -16px;
-  left: 0;
-  width: 100%;
-  text-align: center;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 12px;
   font-weight: bold;
   color: #fff;
+  text-shadow: 0 0 2px #000;
+  z-index: 10;
+  pointer-events: none;
 }
+
 
 #hud {
   position: absolute;
