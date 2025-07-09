@@ -1,49 +1,44 @@
-export function findPath(start, end, isBlocked, gridSize) {
-  const open = [start], cameFrom = {}, gScore = {}, fScore = {};
-  const key = (x, y) => `${x},${y}`;
+export function findPath(start, goal, isBlocked, gridSize) {
+  const queue = [];
+  const visited = {};
+  const key = (p) => `${p.x},${p.y}`;
+  queue.push({ x: start.x, y: start.y, path: [] });
 
-  gScore[key(start.x, start.y)] = 0;
-  fScore[key(start.x, start.y)] = heuristic(start, end);
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const { x, y, path } = current;
+    const curKey = key(current);
 
-  while (open.length) {
-    open.sort((a, b) => fScore[key(a.x, a.y)] - fScore[key(b.x, b.y)]);
-    const current = open.shift();
-    const k = key(current.x, current.y);
+    if (visited[curKey]) continue;
+    visited[curKey] = true;
 
-    if (current.x === end.x && current.y === end.y) return reconstructPath(cameFrom, current);
+    if (x === goal.x && y === goal.y) return [...path, { x, y }];
 
-    for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0]]) {
-      const neighbor = { x: current.x + dx, y: current.y + dy };
-      const nk = key(neighbor.x, neighbor.y);
+    const directions = [
+      { x: 0, y: -1 },
+      { x: 0, y: 1 },
+      { x: -1, y: 0 },
+      { x: 1, y: 0 }
+    ];
 
-      if (neighbor.x < 0 || neighbor.y < 0 ||
-          neighbor.x >= gridSize || neighbor.y >= gridSize ||
-          isBlocked(neighbor.x, neighbor.y)) continue;
-
-      const g = gScore[k] + 1;
-      if (!gScore[nk] || g < gScore[nk]) {
-        cameFrom[nk] = current;
-        gScore[nk] = g;
-        fScore[nk] = g + heuristic(neighbor, end);
-        if (!open.some(n => n.x === neighbor.x && n.y === neighbor.y)) open.push(neighbor);
+    for (const d of directions) {
+      const nx = x + d.x;
+      const ny = y + d.y;
+      const nextKey = `${nx},${ny}`;
+      if (
+        nx >= 0 && nx < gridSize &&
+        ny >= 0 && ny < gridSize &&
+        !visited[nextKey] &&
+        !isBlocked(nx, ny)
+      ) {
+        queue.push({
+          x: nx,
+          y: ny,
+          path: [...path, { x, y }]
+        });
       }
     }
   }
+
   return [];
-}
-
-function heuristic(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
-
-function reconstructPath(cameFrom, current) {
-  const path = [];
-  let k = `${current.x},${current.y}`;
-  path.push(current);
-  while (cameFrom[k]) {
-    current = cameFrom[k];
-    k = `${current.x},${current.y}`;
-    path.unshift(current);
-  }
-  return path;
 }

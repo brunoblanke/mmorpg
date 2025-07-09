@@ -49,7 +49,7 @@ function createEnemyElement(enemy) {
   return el;
 }
 
-export function patrolEnemies(enemies, walls, player, tileSelector = '[data-x="{x}"][data-y="{y}"]') {
+export function patrolEnemies(enemies, walls, player) {
   enemies.forEach(enemy => {
     if (enemy._moving) return;
 
@@ -57,7 +57,7 @@ export function patrolEnemies(enemies, walls, player, tileSelector = '[data-x="{
 
     if (distToPlayer <= enemy.detectionRadius) {
       enemy.isChasing = true;
-      $(tileSelector.replace('{x}', player.x).replace('{y}', player.y)).find('.player')
+      $(`[data-x="${player.x}"][data-y="${player.y}"]`).find('.player')
         .addClass('highlighted');
     } else {
       if (enemy.isChasing) {
@@ -86,7 +86,6 @@ export function patrolEnemies(enemies, walls, player, tileSelector = '[data-x="{
     );
 
     if (!path.length) return;
-
     let step = 0;
     enemy._moving = true;
 

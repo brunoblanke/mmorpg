@@ -16,7 +16,6 @@ export function createPlayerElement(name, hp, maxHp, stats = {}) {
 
   div.append(tag, hpBar, info);
   updateHpBar(div, hp, maxHp);
-
   return div;
 }
 
@@ -30,13 +29,8 @@ export function spawnOtherPlayer(id, pos) {
   const tile = $(`[data-x="${pos.x}"][data-y="${pos.y}"]`);
 
   const stats = {
-    level: 1,
-    xp: 0,
-    attack: 5,
-    defense: 3,
-    speed: 150,
-    x: pos.x,
-    y: pos.y
+    level: 1, xp: 0, attack: 5, defense: 3, speed: 150,
+    x: pos.x, y: pos.y
   };
 
   const el = createPlayerElement(nickname, 10, 10, stats);

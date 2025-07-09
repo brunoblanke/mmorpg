@@ -36,20 +36,32 @@ const enemies = [
   {
     id: 'enemy1',
     name: 'Goblin',
-    x: 15, y: 15,
-    level: 2, attack: 4, defense: 2, xp: 15, speed: 400,
-    hp: 10, maxHp: 10
+    x: 15,
+    y: 15,
+    level: 2,
+    attack: 4,
+    defense: 2,
+    xp: 15,
+    speed: 400,
+    hp: 10,
+    maxHp: 10
   },
   {
     id: 'enemy2',
     name: 'Orc',
-    x: 30, y: 30,
-    level: 4, attack: 6, defense: 4, xp: 30, speed: 500,
-    hp: 20, maxHp: 20
+    x: 30,
+    y: 30,
+    level: 4,
+    attack: 6,
+    defense: 4,
+    xp: 30,
+    speed: 500,
+    hp: 20,
+    maxHp: 20
   }
 ];
 
-// ⚠️ Define detecção e patrulha antes do mapa
+// ⚠️ Define área de patrulha antes do mapa
 enemies.forEach(enemy => {
   enemy.detectionRadius = 4;
   enemy.isChasing = false;
