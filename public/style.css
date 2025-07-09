@@ -40,13 +40,8 @@ body, html {
 }
 
 .player {
+  position: relative;
   background: #d6d6d6;
-  width: 100%;
-  height: 100%;
-}
-
-.other-player {
-  background: #4caf50;
   width: 100%;
   height: 100%;
 }
@@ -60,8 +55,15 @@ body, html {
   font-weight: bold;
   color: #fff;
   text-shadow: 0 0 2px #000;
-  z-index: 10;
+  white-space: nowrap;
   pointer-events: none;
+  z-index: 5;
+}
+
+.other-player {
+  background: #4caf50;
+  width: 100%;
+  height: 100%;
 }
 
 
