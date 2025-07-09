@@ -61,7 +61,7 @@ const enemies = [
   }
 ];
 
-// ⚠️ Define área de patrulha antes do mapa
+// ⚠️ Define áreas de patrulha antes do mapa
 enemies.forEach(enemy => {
   enemy.detectionRadius = 4;
   enemy.isChasing = false;
@@ -151,6 +151,10 @@ function moveToTile(tx, ty) {
   );
 
   if (!path.length) return;
+
+  // 🧭 Marca o tile de destino visualmente
+  $('.tile').removeClass('destination');
+  $(`[data-x="${tx}"][data-y="${ty}"]`).addClass('destination');
 
   let step = 0;
   moveInterval = setInterval(() => {
