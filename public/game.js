@@ -9,6 +9,8 @@ $(function () {
   let moveInterval;
   let localPlayerID;
   const otherPlayers = {};
+  const playerNicknames = {};
+  const playerPositions = {};
 
   const player = {
     x: spawnPoint.x,
@@ -27,7 +29,6 @@ $(function () {
     { x: 10, y: 10 }, { x: 11, y: 10 }, { x: 12, y: 10 },
   ];
 
-  // Evita que o spawn esteja em parede
   const filteredWalls = walls.filter(w => !(w.x === spawnPoint.x && w.y === spawnPoint.y));
 
   for (let y = 0; y < gridSize; y++) {
@@ -65,20 +66,33 @@ $(function () {
 
   function renderPlayer() {
     $('.player:not(.other-player)').remove();
-    $(`[data-x="${player.x}"][data-y="${player.y}"]`).append('<div class="player"></div>');
+
+    const tile = $(`[data-x="${player.x}"][data-y="${player.y}"]`);
+    const playerDiv = $('<div class="player"></div>');
+    const nameTag = $('<div class="name-tag">Você</div>');
+    playerDiv.append(nameTag);
+    tile.append(playerDiv);
+
     $mapContainer.css({
       left: -(player.x * tileSize - $(window).width() / 2 + tileSize / 2),
       top: -(player.y * tileSize - $(window).height() / 2 + tileSize / 2)
     });
+
+    playerPositions[localPlayerID] = { x: player.x, y: player.y };
     updateHUD();
     socket.emit('move', { x: player.x, y: player.y });
   }
 
   function attemptMove(x, y) {
+    const isOccupied = Object.entries(playerPositions).some(([id, pos]) => {
+      return id !== localPlayerID && pos.x === x && pos.y === y;
+    });
+
     if (
       x >= 0 && x < gridSize &&
       y >= 0 && y < gridSize &&
-      !isWall(x, y)
+      !isWall(x, y) &&
+      !isOccupied
     ) {
       player.x = x;
       player.y = y;
@@ -105,3 +119,90 @@ $(function () {
     moveInterval = setInterval(() => {
       if (step >= path.length) {
         clearInterval(moveInterval);
+        clearDestinationMarker();
+        return;
+      }
+      attemptMove(path[step].x, path[step].y);
+      step++;
+    }, player.speed);
+  }
+
+  $('#game-map').on('click', function (e) {
+    const offset = $mapContainer.offset();
+    const mouseX = e.pageX - offset.left;
+    const mouseY = e.pageY - offset.top;
+    const x = Math.floor(mouseX / tileSize);
+    const y = Math.floor(mouseY / tileSize);
+    moveToTile(x, y);
+  });
+
+  $(document).on('keydown', e => {
+    const dir = {
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0]
+    }[e.key];
+    if (dir) {
+      if (moveInterval) clearInterval(moveInterval);
+      clearDestinationMarker();
+      attemptMove(player.x + dir[0], player.y + dir[1]);
+    }
+  });
+
+  socket.on('init', data => {
+    localPlayerID = data.id;
+    for (const [id, pos] of Object.entries(data.players)) {
+      if (id !== localPlayerID) {
+        spawnOtherPlayer(id, pos);
+        playerPositions[id] = pos;
+      }
+    }
+    renderPlayer();
+  });
+
+  socket.on('newPlayer', ({ id, pos }) => {
+    spawnOtherPlayer(id, pos);
+    playerPositions[id] = pos;
+  });
+
+  socket.on('playerMoved', ({ id, pos }) => {
+    moveOtherPlayer(id, pos);
+    playerPositions[id] = pos;
+  });
+
+  socket.on('playerLeft', id => {
+    removeOtherPlayer(id);
+    delete playerPositions[id];
+  });
+
+  function spawnOtherPlayer(id, pos) {
+    const tile = $(`[data-x="${pos.x}"][data-y="${pos.y}"]`);
+    const nickname = `Jogador-${id.slice(0, 4)}`; // Nome automático
+
+    const el = $('<div class="player other-player"></div>');
+    const tag = $(`<div class="name-tag">${nickname}</div>`);
+    el.append(tag);
+
+    otherPlayers[id] = el;
+    playerNicknames[id] = nickname;
+    tile.append(el);
+  }
+
+  function moveOtherPlayer(id, pos) {
+    const el = otherPlayers[id];
+    if (el) {
+      el.detach();
+      const tile = $(`[data-x="${pos.x}"][data-y="${pos.y}"]`);
+      tile.append(el);
+    }
+  }
+
+  function removeOtherPlayer(id) {
+    if (otherPlayers[id]) {
+      otherPlayers[id].remove();
+      delete otherPlayers[id];
+      delete playerNicknames[id];
+    }
+  }
+});
