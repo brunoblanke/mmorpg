@@ -53,7 +53,7 @@ $(function () {
   }
 
   function renderPlayer() {
-    $('.player').remove();
+    $('.player:not(.other-player)').remove();
     $(`[data-x="${player.x}"][data-y="${player.y}"]`).append('<div class="player"></div>');
     $mapContainer.css({
       left: -(player.x * tileSize - $(window).width() / 2 + tileSize / 2),
@@ -132,6 +132,7 @@ $(function () {
     localPlayerID = data.id;
     for (const [id, pos] of Object.entries(data.players)) {
       if (id !== localPlayerID) spawnOtherPlayer(id, pos);
+      $('<div class="player other-player"></div>')
     }
   });
 
