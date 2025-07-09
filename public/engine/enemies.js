@@ -7,7 +7,9 @@ export function spawnEnemies(enemies) {
     enemy.isChasing = false;
     enemy._moving = false;
 
-    updatePatrolArea(enemy);
+    enemy.patrolOrigin = { x: enemy.x, y: enemy.y };
+    enemy.patrolArea = generateArea(enemy.patrolOrigin.x, enemy.patrolOrigin.y, 2);
+
     const tile = $(`[data-x="${enemy.x}"][data-y="${enemy.y}"]`);
     const el = createEnemyElement(enemy);
     tile.append(el);
@@ -15,17 +17,18 @@ export function spawnEnemies(enemies) {
   });
 }
 
-function updatePatrolArea(enemy) {
-  enemy.area = [];
-  for (let dy = -2; dy <= 2; dy++) {
-    for (let dx = -2; dx <= 2; dx++) {
-      const tx = enemy.x + dx;
-      const ty = enemy.y + dy;
-      if (tx >= 0 && ty >= 0 && tx < 50 && ty < 50) {
-        enemy.area.push({ x: tx, y: ty });
+function generateArea(cx, cy, radius) {
+  const area = [];
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const x = cx + dx;
+      const y = cy + dy;
+      if (x >= 0 && y >= 0 && x < 50 && y < 50) {
+        area.push({ x, y });
       }
     }
   }
+  return area;
 }
 
 function createEnemyElement(enemy) {
@@ -62,21 +65,13 @@ export function patrolEnemies(enemies, walls, player) {
     } else {
       if (enemy.isChasing) {
         enemy.isChasing = false;
-        updatePatrolArea(enemy);
         $('.player.highlighted').removeClass('highlighted');
       }
     }
 
-    let destination = null;
-    if (enemy.isChasing) {
-      destination = { x: player.x, y: player.y };
-    } else {
-      const validTiles = enemy.area.filter(pos =>
-        !walls.some(w => w.x === pos.x && w.y === pos.y) &&
-        (pos.x !== enemy.x || pos.y !== enemy.y)
-      );
-      destination = validTiles[Math.floor(Math.random() * validTiles.length)];
-    }
+    const destination = enemy.isChasing
+      ? { x: player.x, y: player.y }
+      : getRandomPatrolDestination(enemy, walls);
 
     const path = findPath(
       { x: enemy.x, y: enemy.y },
@@ -86,6 +81,7 @@ export function patrolEnemies(enemies, walls, player) {
     );
 
     if (!path.length) return;
+
     let step = 0;
     enemy._moving = true;
 
@@ -113,6 +109,31 @@ export function patrolEnemies(enemies, walls, player) {
       `);
 
       step++;
-    }, enemy.speed);
+    }, Math.max(100, enemy.speed * 0.75)); // mais dinâmico
+
+    // Área de detecção atualizada visualmente no mapa
+    updateDetectionVisual(enemy);
   });
+}
+
+function getRandomPatrolDestination(enemy, walls) {
+  const valid = enemy.patrolArea.filter(pos =>
+    !walls.some(w => w.x === pos.x && w.y === pos.y) &&
+    (pos.x !== enemy.x || pos.y !== enemy.y)
+  );
+
+  return valid[Math.floor(Math.random() * valid.length)];
+}
+
+function updateDetectionVisual(enemy) {
+  $('.tile').removeClass(`detect-${enemy.id}`);
+  for (let dy = -enemy.detectionRadius; dy <= enemy.detectionRadius; dy++) {
+    for (let dx = -enemy.detectionRadius; dx <= enemy.detectionRadius; dx++) {
+      const tx = enemy.x + dx;
+      const ty = enemy.y + dy;
+      if (tx >= 0 && ty >= 0 && tx < 50 && ty < 50) {
+        $(`[data-x="${tx}"][data-y="${ty}"]`).addClass(`detect-${enemy.id}`);
+      }
+    }
+  }
 }
