@@ -56,12 +56,12 @@ export function patrolEnemies(enemies, walls, player) {
   enemies.forEach(enemy => {
     if (enemy._moving) return;
 
-    const distToPlayer = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+    const detectionTiles = generateArea(enemy.x, enemy.y, enemy.detectionRadius);
+    const isPlayerDetected = detectionTiles.some(pos => pos.x === player.x && pos.y === player.y);
 
-    if (distToPlayer <= enemy.detectionRadius) {
+    if (isPlayerDetected) {
       enemy.isChasing = true;
-      $(`[data-x="${player.x}"][data-y="${player.y}"]`).find('.player')
-        .addClass('highlighted');
+      $(`[data-x="${player.x}"][data-y="${player.y}"]`).find('.player').addClass('highlighted');
     } else {
       if (enemy.isChasing) {
         enemy.isChasing = false;
@@ -109,9 +109,8 @@ export function patrolEnemies(enemies, walls, player) {
       `);
 
       step++;
-    }, Math.max(100, enemy.speed * 0.75)); // mais dinâmico
+    }, Math.max(80, enemy.speed * 0.6)); // movimento mais ágil
 
-    // Área de detecção atualizada visualmente no mapa
     updateDetectionVisual(enemy);
   });
 }
@@ -121,19 +120,13 @@ function getRandomPatrolDestination(enemy, walls) {
     !walls.some(w => w.x === pos.x && w.y === pos.y) &&
     (pos.x !== enemy.x || pos.y !== enemy.y)
   );
-
   return valid[Math.floor(Math.random() * valid.length)];
 }
 
 function updateDetectionVisual(enemy) {
   $('.tile').removeClass(`detect-${enemy.id}`);
-  for (let dy = -enemy.detectionRadius; dy <= enemy.detectionRadius; dy++) {
-    for (let dx = -enemy.detectionRadius; dx <= enemy.detectionRadius; dx++) {
-      const tx = enemy.x + dx;
-      const ty = enemy.y + dy;
-      if (tx >= 0 && ty >= 0 && tx < 50 && ty < 50) {
-        $(`[data-x="${tx}"][data-y="${ty}"]`).addClass(`detect-${enemy.id}`);
-      }
-    }
-  }
+  const detectionTiles = generateArea(enemy.x, enemy.y, enemy.detectionRadius);
+  detectionTiles.forEach(({ x, y }) => {
+    $(`[data-x="${x}"][data-y="${y}"]`).addClass(`detect-${enemy.id}`);
+  });
 }
