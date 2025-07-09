@@ -1,6 +1,4 @@
-import {
-  buildMap
-} from './engine/map.js';
+import { buildMap } from './engine/map.js';
 import {
   createPlayerElement,
   updateHpBar,
@@ -12,12 +10,8 @@ import {
   spawnEnemies,
   patrolEnemies
 } from './engine/enemies.js';
-import {
-  findPath
-} from './engine/pathfinding.js';
-import {
-  setupSocketHandlers
-} from './engine/socket.js';
+import { findPath } from './engine/pathfinding.js';
+import { setupSocketHandlers } from './engine/socket.js';
 
 const socket = io();
 const gridSize = 50;
@@ -55,10 +49,13 @@ const enemies = [
   }
 ];
 
-// ⚠️ IMPORTANTE: Cria área de patrulha ANTES do buildMap
+// ⚠️ Define detecção e patrulha antes do mapa
 enemies.forEach(enemy => {
   enemy.detectionRadius = 4;
+  enemy.isChasing = false;
+  enemy._moving = false;
   enemy.area = [];
+
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
       const tx = enemy.x + dx;
