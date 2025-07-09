@@ -19,7 +19,6 @@ import {
   setupSocketHandlers
 } from './engine/socket.js';
 
-// 🧩 Configurações básicas
 const socket = io();
 const gridSize = 50;
 const tileSize = 30;
@@ -28,7 +27,6 @@ const spawnPoint = { x: 5, y: 5 };
 const $map = $('#game-map');
 const $mapContainer = $('<div id="map-container"></div>').appendTo($map);
 
-// 🔧 Variáveis globais
 window.localPlayerID = null;
 window.otherPlayers = {};
 const playerPositions = {};
@@ -45,7 +43,6 @@ const enemies = [
     id: 'enemy1',
     name: 'Goblin',
     x: 15, y: 15,
-    area: [{x:15,y:15},{x:16,y:15},{x:15,y:16},{x:16,y:16},{x:17,y:15}],
     level: 2, attack: 4, defense: 2, xp: 15, speed: 400,
     hp: 10, maxHp: 10
   },
@@ -53,10 +50,6 @@ const enemies = [
     id: 'enemy2',
     name: 'Orc',
     x: 30, y: 30,
-    area: [
-      {x:30,y:30},{x:31,y:30},{x:32,y:30},{x:30,y:31},{x:31,y:31},
-      {x:32,y:31},{x:30,y:32},{x:31,y:32},{x:32,y:32},{x:33,y:31}
-    ],
     level: 4, attack: 6, defense: 4, xp: 30, speed: 500,
     hp: 20, maxHp: 20
   }
@@ -78,23 +71,20 @@ let moveInterval = null;
 
 buildMap($mapContainer, gridSize, spawnPoint, walls, enemies);
 spawnEnemies(enemies);
-setInterval(() => patrolEnemies(enemies, walls), 2000);
+setInterval(() => patrolEnemies(enemies, walls, player), 2000);
 
-// 🧠 Atualiza HUD
-function updateHUD() {
-  $('#level').text(player.level);
-  $('#xp').text(player.xp);
-  $('#attack').text(player.attack);
-  $('#defense').text(player.defense);
-  $('#speed').text(player.speed);
-  $('#position').text(`x:${player.x}, y:${player.y}`);
-}
-
-// 🎮 Renderiza o jogador local
 function renderPlayer() {
   $('.player:not(.other-player):not(.enemy)').remove();
   const tile = $(`[data-x="${player.x}"][data-y="${player.y}"]`);
-  const el = createPlayerElement('Você', player.hp, player.maxHp);
+  const el = createPlayerElement('Você', player.hp, player.maxHp, {
+    level: player.level,
+    xp: player.xp,
+    attack: player.attack,
+    defense: player.defense,
+    speed: player.speed,
+    x: player.x,
+    y: player.y
+  });
   tile.append(el);
 
   $mapContainer.css({
@@ -103,11 +93,9 @@ function renderPlayer() {
   });
 
   playerPositions[window.localPlayerID] = { x: player.x, y: player.y };
-  updateHUD();
   socket.emit('move', { x: player.x, y: player.y });
 }
 
-// 🚫 Tenta mover o jogador local
 function attemptMove(x, y) {
   const isOccupied = Object.entries(playerPositions).some(([id, pos]) =>
     id !== window.localPlayerID && pos.x === x && pos.y === y
@@ -126,7 +114,6 @@ function attemptMove(x, y) {
   }
 }
 
-// 🧭 Movimenta com pathfinding A*
 function moveToTile(tx, ty) {
   if (moveInterval) clearInterval(moveInterval);
 
@@ -151,7 +138,6 @@ function moveToTile(tx, ty) {
   }, player.speed);
 }
 
-// 🖱 Clique para movimentar
 $('#game-map').on('click', e => {
   const offset = $mapContainer.offset();
   const x = Math.floor((e.pageX - offset.left) / tileSize);
@@ -159,7 +145,6 @@ $('#game-map').on('click', e => {
   moveToTile(x, y);
 });
 
-// ⌨️ Movimento por teclado
 $(document).on('keydown', e => {
   const dir = {
     ArrowUp: [0, -1],
@@ -173,7 +158,6 @@ $(document).on('keydown', e => {
   }
 });
 
-// 🔌 Configura eventos socket
 setupSocketHandlers(
   socket,
   renderPlayer,

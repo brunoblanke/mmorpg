@@ -3,23 +3,29 @@ import { findPath } from './pathfinding.js';
 
 export function spawnEnemies(enemies) {
   enemies.forEach(enemy => {
-    // Gera uma área 5x5 ao redor do inimigo
-    enemy.area = [];
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dx = -2; dx <= 2; dx++) {
-        const tx = enemy.x + dx;
-        const ty = enemy.y + dy;
-        if (tx >= 0 && ty >= 0 && tx < 50 && ty < 50) {
-          enemy.area.push({ x: tx, y: ty });
-        }
-      }
-    }
+    enemy.detectionRadius = 4;
+    enemy.isChasing = false;
+    enemy._moving = false;
 
+    updatePatrolArea(enemy);
     const tile = $(`[data-x="${enemy.x}"][data-y="${enemy.y}"]`);
     const el = createEnemyElement(enemy);
     tile.append(el);
     enemy.element = el;
   });
+}
+
+function updatePatrolArea(enemy) {
+  enemy.area = [];
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const tx = enemy.x + dx;
+      const ty = enemy.y + dy;
+      if (tx >= 0 && ty >= 0 && tx < 50 && ty < 50) {
+        enemy.area.push({ x: tx, y: ty });
+      }
+    }
+  }
 }
 
 function createEnemyElement(enemy) {
@@ -43,16 +49,35 @@ function createEnemyElement(enemy) {
   return el;
 }
 
-export function patrolEnemies(enemies, walls) {
+export function patrolEnemies(enemies, walls, player, tileSelector = '[data-x="{x}"][data-y="{y}"]') {
   enemies.forEach(enemy => {
-    if (enemy._moving) return; // impede duplo movimento
+    if (enemy._moving) return;
 
-    const validTiles = enemy.area.filter(pos =>
-      !walls.some(w => w.x === pos.x && w.y === pos.y) &&
-      (pos.x !== enemy.x || pos.y !== enemy.y)
-    );
+    const distToPlayer = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
 
-    const destination = validTiles[Math.floor(Math.random() * validTiles.length)];
+    if (distToPlayer <= enemy.detectionRadius) {
+      enemy.isChasing = true;
+      $(tileSelector.replace('{x}', player.x).replace('{y}', player.y)).find('.player')
+        .addClass('highlighted');
+    } else {
+      if (enemy.isChasing) {
+        enemy.isChasing = false;
+        updatePatrolArea(enemy);
+        $('.player.highlighted').removeClass('highlighted');
+      }
+    }
+
+    let destination = null;
+    if (enemy.isChasing) {
+      destination = { x: player.x, y: player.y };
+    } else {
+      const validTiles = enemy.area.filter(pos =>
+        !walls.some(w => w.x === pos.x && w.y === pos.y) &&
+        (pos.x !== enemy.x || pos.y !== enemy.y)
+      );
+      destination = validTiles[Math.floor(Math.random() * validTiles.length)];
+    }
+
     const path = findPath(
       { x: enemy.x, y: enemy.y },
       destination,
@@ -61,6 +86,7 @@ export function patrolEnemies(enemies, walls) {
     );
 
     if (!path.length) return;
+
     let step = 0;
     enemy._moving = true;
 
