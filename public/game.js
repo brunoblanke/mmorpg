@@ -55,6 +55,21 @@ const enemies = [
   }
 ];
 
+// ⚠️ IMPORTANTE: Cria área de patrulha ANTES do buildMap
+enemies.forEach(enemy => {
+  enemy.detectionRadius = 4;
+  enemy.area = [];
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const tx = enemy.x + dx;
+      const ty = enemy.y + dy;
+      if (tx >= 0 && ty >= 0 && tx < gridSize && ty < gridSize) {
+        enemy.area.push({ x: tx, y: ty });
+      }
+    }
+  }
+});
+
 const player = {
   x: spawnPoint.x,
   y: spawnPoint.y,
@@ -120,8 +135,9 @@ function moveToTile(tx, ty) {
   const path = findPath(
     { x: player.x, y: player.y },
     { x: tx, y: ty },
-    (x, y) => walls.some(w => w.x === x && w.y === y) ||
-             Object.values(playerPositions).some(p => p.x === x && p.y === y),
+    (x, y) =>
+      walls.some(w => w.x === x && w.y === y) ||
+      Object.values(playerPositions).some(p => p.x === x && p.y === y),
     gridSize
   );
 
