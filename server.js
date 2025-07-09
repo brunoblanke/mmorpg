@@ -11,15 +11,9 @@ app.use(express.static('public'));
 let players = {};
 
 io.on('connection', (socket) => {
-  console.log(`Novo jogador: ${socket.id}`);
   players[socket.id] = { x: 25, y: 25 };
-
   socket.emit('init', { id: socket.id, players });
-
-  socket.broadcast.emit('newPlayer', {
-    id: socket.id,
-    pos: players[socket.id]
-  });
+  socket.broadcast.emit('newPlayer', { id: socket.id, pos: players[socket.id] });
 
   socket.on('move', (pos) => {
     players[socket.id] = pos;
@@ -33,6 +27,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
