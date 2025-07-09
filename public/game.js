@@ -1,6 +1,7 @@
 $(function () {
   const socket = io();
-  const gridSize = 50, tileSize = 30;
+  const gridSize = 50;
+  const tileSize = 30;
   const spawnPoint = { x: 5, y: 5 };
 
   const $map = $('#game-map');
@@ -9,8 +10,8 @@ $(function () {
   let moveInterval;
   let localPlayerID;
   const otherPlayers = {};
-  const playerNicknames = {};
   const playerPositions = {};
+  const playerNicknames = {};
 
   const player = {
     x: spawnPoint.x,
@@ -66,7 +67,6 @@ $(function () {
 
   function renderPlayer() {
     $('.player:not(.other-player)').remove();
-
     const tile = $(`[data-x="${player.x}"][data-y="${player.y}"]`);
     const playerDiv = $('<div class="player"></div>');
     const nameTag = $('<div class="name-tag">Você</div>');
@@ -100,20 +100,18 @@ $(function () {
     }
   }
 
-  function generatePath(x0, y0, x1, y1) {
-    const path = [];
-    let x = x0, y = y0;
-    while (x !== x1 || y !== y1) {
-      if (x < x1) x++; else if (x > x1) x--;
-      else if (y < y1) y++; else if (y > y1) y--;
-      path.push({ x, y });
-    }
-    return path;
-  }
-
   function moveToTile(tx, ty) {
     if (moveInterval) clearInterval(moveInterval);
-    const path = generatePath(player.x, player.y, tx, ty);
+
+    const start = { x: player.x, y: player.y };
+    const end = { x: tx, y: ty };
+
+    const isBlocked = (x, y) =>
+      isWall(x, y) || Object.values(playerPositions).some(pos => pos.x === x && pos.y === y);
+
+    const path = findPath(start, end, isBlocked);
+    if (!path.length) return;
+
     markDestination(tx, ty);
     let step = 0;
     moveInterval = setInterval(() => {
@@ -177,13 +175,11 @@ $(function () {
   });
 
   function spawnOtherPlayer(id, pos) {
+    const nickname = `Jogador-${id.slice(0, 4)}`;
     const tile = $(`[data-x="${pos.x}"][data-y="${pos.y}"]`);
-    const nickname = `Jogador-${id.slice(0, 4)}`; // Nome automático
-
     const el = $('<div class="player other-player"></div>');
     const tag = $(`<div class="name-tag">${nickname}</div>`);
     el.append(tag);
-
     otherPlayers[id] = el;
     playerNicknames[id] = nickname;
     tile.append(el);
@@ -204,5 +200,62 @@ $(function () {
       delete otherPlayers[id];
       delete playerNicknames[id];
     }
+  }
+
+  function findPath(start, end, isBlocked) {
+    const open = [start];
+    const cameFrom = {};
+    const gScore = {};
+    const fScore = {};
+    const key = (x, y) => `${x},${y}`;
+    gScore[key(start.x, start.y)] = 0;
+    fScore[key(start.x, start.y)] = heuristic(start, end);
+
+    while (open.length) {
+      open.sort((a, b) => fScore[key(a.x, a.y)] - fScore[key(b.x, b.y)]);
+      const current = open.shift();
+      const k = key(current.x, current.y);
+
+      if (current.x === end.x && current.y === end.y) {
+        return reconstructPath(cameFrom, current);
+      }
+
+      for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0]]) {
+        const neighbor = { x: current.x + dx, y: current.y + dy };
+        const nk = key(neighbor.x, neighbor.y);
+        if (
+          neighbor.x < 0 || neighbor.y < 0 ||
+          neighbor.x >= gridSize || neighbor.y >= gridSize ||
+          isBlocked(neighbor.x, neighbor.y)
+        ) continue;
+
+        const tentativeG = gScore[k] + 1;
+        if (gScore[nk] === undefined || tentativeG < gScore[nk]) {
+          cameFrom[nk] = current;
+          gScore[nk] = tentativeG;
+          fScore[nk] = tentativeG + heuristic(neighbor, end);
+          if (!open.some(n => n.x === neighbor.x && n.y === neighbor.y)) {
+            open.push(neighbor);
+          }
+        }
+      }
+    }
+
+    return []; // Sem caminho possível
+  }
+
+  function heuristic(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y); // Distância Manhattan
+  }
+
+  function reconstructPath(cameFrom, current) {
+    const path = [];
+    let k = `${current.x},${current.y}`;
+    while (cameFrom[k]) {
+      current = cameFrom[k];
+      k = `${current.x},${current.y}`;
+      path.unshift(current);
+    }
+    return path;
   }
 });
