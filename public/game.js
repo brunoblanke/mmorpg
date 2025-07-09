@@ -1,31 +1,42 @@
 $(function () {
   const socket = io();
-  const gridSize = 50;
-  const tileSize = 30;
+  const gridSize = 50, tileSize = 30;
+  const spawnPoint = { x: 5, y: 5 };
+
   const $map = $('#game-map');
   const $mapContainer = $('<div id="map-container"></div>').appendTo($map);
+
   let moveInterval;
   let localPlayerID;
   const otherPlayers = {};
 
   const player = {
-    x: 25, y: 25,
+    x: spawnPoint.x,
+    y: spawnPoint.y,
     level: 1,
     xp: 0,
     attack: 5,
     defense: 3,
-    speed: 150 // milissegundos por passo
+    speed: 150
   };
 
-  const walls = Array.from({ length: 8 }, (_, i) => ({ x: 20 + i, y: 25 }));
+  const walls = [
+    ...Array.from({ length: 8 }, (_, i) => ({ x: 20 + i, y: 25 })),
+    { x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 },
+    { x: 8, y: 6 }, { x: 8, y: 7 }, { x: 8, y: 8 },
+    { x: 10, y: 10 }, { x: 11, y: 10 }, { x: 12, y: 10 },
+  ];
 
-  // Construção do mapa
+  // Evita que o spawn esteja em parede
+  const filteredWalls = walls.filter(w => !(w.x === spawnPoint.x && w.y === spawnPoint.y));
+
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       $('<div>')
         .addClass('tile')
         .attr({ 'data-x': x, 'data-y': y })
-        .toggleClass('wall', walls.some(w => w.x === x && w.y === y))
+        .toggleClass('wall', filteredWalls.some(w => w.x === x && w.y === y))
+        .toggleClass('spawn', x === spawnPoint.x && y === spawnPoint.y)
         .appendTo($mapContainer);
     }
   }
@@ -40,7 +51,7 @@ $(function () {
   }
 
   function isWall(x, y) {
-    return walls.some(w => w.x === x && w.y === y);
+    return filteredWalls.some(w => w.x === x && w.y === y);
   }
 
   function clearDestinationMarker() {
@@ -94,80 +105,3 @@ $(function () {
     moveInterval = setInterval(() => {
       if (step >= path.length) {
         clearInterval(moveInterval);
-        clearDestinationMarker();
-        return;
-      }
-      attemptMove(path[step].x, path[step].y);
-      step++;
-    }, player.speed);
-  }
-
-  // Clique absoluto no mapa
-  $('#game-map').on('click', function (e) {
-    const offset = $mapContainer.offset();
-    const mouseX = e.pageX - offset.left;
-    const mouseY = e.pageY - offset.top;
-    const x = Math.floor(mouseX / tileSize);
-    const y = Math.floor(mouseY / tileSize);
-    moveToTile(x, y);
-  });
-
-  // Movimento por teclas
-  $(document).on('keydown', e => {
-    const dir = {
-      ArrowUp: [0, -1],
-      ArrowDown: [0, 1],
-      ArrowLeft: [-1, 0],
-      ArrowRight: [1, 0]
-    }[e.key];
-    if (dir) {
-      if (moveInterval) clearInterval(moveInterval);
-      clearDestinationMarker();
-      attemptMove(player.x + dir[0], player.y + dir[1]);
-    }
-  });
-
-  // Socket.IO multiplayer
-  socket.on('init', data => {
-    localPlayerID = data.id;
-    for (const [id, pos] of Object.entries(data.players)) {
-      if (id !== localPlayerID) spawnOtherPlayer(id, pos);
-      $('<div class="player other-player"></div>')
-    }
-  });
-
-  socket.on('newPlayer', ({ id, pos }) => {
-    spawnOtherPlayer(id, pos);
-  });
-
-  socket.on('playerMoved', ({ id, pos }) => {
-    moveOtherPlayer(id, pos);
-  });
-
-  socket.on('playerLeft', id => {
-    removeOtherPlayer(id);
-  });
-
-  function spawnOtherPlayer(id, pos) {
-    const el = $('<div class="player other-player"></div>');
-    otherPlayers[id] = el;
-    $(`[data-x="${pos.x}"][data-y="${pos.y}"]`).append(el);
-  }
-
-  function moveOtherPlayer(id, pos) {
-    const el = otherPlayers[id];
-    if (el) {
-      el.detach();
-      $(`[data-x="${pos.x}"][data-y="${pos.y}"]`).append(el);
-    }
-  }
-
-  function removeOtherPlayer(id) {
-    if (otherPlayers[id]) {
-      otherPlayers[id].remove();
-      delete otherPlayers[id];
-    }
-  }
-
-  renderPlayer();
-});

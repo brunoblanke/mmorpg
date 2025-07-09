@@ -11,7 +11,7 @@ app.use(express.static('public'));
 let players = {};
 
 io.on('connection', (socket) => {
-  players[socket.id] = { x: 25, y: 25 };
+  players[socket.id] = { x: 5, y: 5 };
   socket.emit('init', { id: socket.id, players });
   socket.broadcast.emit('newPlayer', { id: socket.id, pos: players[socket.id] });
 
