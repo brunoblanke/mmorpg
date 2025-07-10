@@ -33,19 +33,11 @@ body, html {
 .spawn { box-shadow: inset 0 0 0 2px #007bff; }
 .destination { box-shadow: inset 0 0 0 2px #aaa; }
 
-.area-enemy1 {
-  background-color: rgba(0, 255, 0, 0.15);
-}
-.area-enemy2 {
-  background-color: rgba(255, 0, 0, 0.15);
-}
+.area-enemy1 { background-color: rgba(0, 255, 0, 0.15); }
+.area-enemy2 { background-color: rgba(255, 0, 0, 0.15); }
 
-.detect-enemy1 {
-  outline: 1px dashed lime;
-}
-.detect-enemy2 {
-  outline: 1px dashed crimson;
-}
+.detect-enemy1 { outline: 1px dashed lime; }
+.detect-enemy2 { outline: 1px dashed crimson; }
 
 .player {
   position: relative;
@@ -89,3 +81,18 @@ body, html {
 
 .player-info, .enemy-info {
   position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: #fff;
+  text-align: center;
+  line-height: 1.2;
+  pointer-events: none;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 0 2px #000;
+  white-space: nowrap;
+}

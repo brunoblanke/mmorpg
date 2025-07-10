@@ -61,19 +61,19 @@ const enemies = [
   }
 ];
 
-// ⚠️ Define áreas de patrulha antes do mapa
+// Define áreas de patrulha antes do mapa
 enemies.forEach(enemy => {
   enemy.detectionRadius = 4;
   enemy.isChasing = false;
   enemy._moving = false;
-  enemy.area = [];
-
+  enemy.patrolOrigin = { x: enemy.x, y: enemy.y };
+  enemy.patrolArea = [];
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
       const tx = enemy.x + dx;
       const ty = enemy.y + dy;
       if (tx >= 0 && ty >= 0 && tx < gridSize && ty < gridSize) {
-        enemy.area.push({ x: tx, y: ty });
+        enemy.patrolArea.push({ x: tx, y: ty });
       }
     }
   }
@@ -95,7 +95,8 @@ let moveInterval = null;
 
 buildMap($mapContainer, gridSize, spawnPoint, walls, enemies);
 spawnEnemies(enemies);
-setInterval(() => patrolEnemies(enemies, walls, player), 2000);
+renderPlayer(); // ✅ Garante que o jogador aparece logo no início
+setInterval(() => patrolEnemies(enemies, walls, player), 1500); // movimento mais dinâmico
 
 function renderPlayer() {
   $('.player:not(.other-player):not(.enemy)').remove();
@@ -152,7 +153,6 @@ function moveToTile(tx, ty) {
 
   if (!path.length) return;
 
-  // 🧭 Marca o tile de destino visualmente
   $('.tile').removeClass('destination');
   $(`[data-x="${tx}"][data-y="${ty}"]`).addClass('destination');
 
