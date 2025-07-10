@@ -1,18 +1,23 @@
 import { player, enemies, walls, lerp, canvas, camera, tileSize } from './canvas-config.js';
 
-export function tryMove(entity, dx, dy) {
-  const nx = entity.x + dx;
-  const ny = entity.y + dy;
+let movementStartTime = 0;
+let isMoving = false;
+let currentStep = null;
 
+export function tryStepTo(nx, ny) {
   const blocked =
     walls.some(w => w.x === nx && w.y === ny) ||
-    enemies.some(e => e !== entity && e.x === nx && e.y === ny) ||
-    (entity !== player && player.x === nx && player.y === ny);
+    enemies.some(e => e.x === nx && e.y === ny) ||
+    (player.x === nx && player.y === ny);
 
-  if (nx >= 0 && ny >= 0 && nx < 50 && ny < 50 && !blocked) {
-    entity.x = nx;
-    entity.y = ny;
-    entity.animationProgress = 0;
+  if (
+    nx >= 0 && ny >= 0 &&
+    nx < 50 && ny < 50 &&
+    !blocked
+  ) {
+    currentStep = { fromX: player.x, fromY: player.y, toX: nx, toY: ny };
+    movementStartTime = performance.now();
+    isMoving = true;
     return true;
   }
 
@@ -20,40 +25,55 @@ export function tryMove(entity, dx, dy) {
 }
 
 export function updatePlayerMovement() {
-  if (!player.destination) return;
+  if (!isMoving || !currentStep) return;
 
-  const dx = player.destination.x - player.x;
-  const dy = player.destination.y - player.y;
+  const elapsed = performance.now() - movementStartTime;
+  const t = Math.min(elapsed / player.speed, 1);
 
-  const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
-  const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+  player.posX = lerp(currentStep.fromX, currentStep.toX, t);
+  player.posY = lerp(currentStep.fromY, currentStep.toY, t);
 
-  let moved = false;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    moved = tryMove(player, stepX, 0) || tryMove(player, 0, stepY);
-  } else {
-    moved = tryMove(player, 0, stepY) || tryMove(player, stepX, 0);
-  }
-
-  if (!moved && stepX !== 0 && stepY !== 0) {
-    tryMove(player, stepX, stepY);
-  }
-
-  if (player.x === player.destination.x && player.y === player.destination.y) {
-    player.destination = null;
+  if (t >= 1) {
+    player.x = currentStep.toX;
+    player.y = currentStep.toY;
+    player.posX = player.x;
+    player.posY = player.y;
+    currentStep = null;
+    isMoving = false;
   }
 }
 
-export function updateEntityAnimation(entity) {
-  if (entity.animationProgress < 1) {
-    const delta = 1 / (entity.speed / 16);
-    entity.animationProgress += delta;
-    entity.posX = lerp(entity.posX, entity.x, entity.animationProgress);
-    entity.posY = lerp(entity.posY, entity.y, entity.animationProgress);
-  } else {
-    entity.posX = entity.x;
-    entity.posY = entity.y;
+export function handleDirectionalInput(dx, dy) {
+  player.destination = null; // cancela clique anterior
+
+  if (isMoving) return; // espera terminar movimento atual
+
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  tryStepTo(nx, ny);
+}
+
+export function handleClickDestination(tx, ty) {
+  player.destination = { x: tx, y: ty };
+  currentStep = null;
+  isMoving = false;
+
+  const dx = tx - player.x;
+  const dy = tx - player.y;
+
+  if (dx !== 0 || dy !== 0) {
+    const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+    const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (!tryStepTo(player.x + stepX, player.y)) {
+        tryStepTo(player.x, player.y + stepY);
+      }
+    } else {
+      if (!tryStepTo(player.x, player.y + stepY)) {
+        tryStepTo(player.x + stepX, player.y);
+      }
+    }
   }
 }
 

@@ -11,8 +11,9 @@ import {
 
 import {
   updatePlayerMovement,
-  updateEntityAnimation,
-  updateCamera
+  updateCamera,
+  handleDirectionalInput,
+  handleClickDestination
 } from './canvas-movement.js';
 
 import {
@@ -21,18 +22,11 @@ import {
 } from './canvas-enemies.js';
 
 function gameLoop() {
-  // Atualiza movimentações e IA
   updatePlayerMovement();
   updateEnemies();
 
-  // Atualiza animações suaves
-  updateEntityAnimation(player);
-  animateEnemies();
-
-  // Atualiza câmera baseada na posição interpolada do player
   updateCamera();
 
-  // Renderiza tudo
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   drawGrid(gridSize);
@@ -42,6 +36,7 @@ function gameLoop() {
   drawRect(player.posX, player.posY, player.color);
   drawText('Você', player.posX, player.posY);
   drawStats(player);
+
   if (player.destination) {
     drawDestinationMarker(player.destination.x, player.destination.y);
   }
@@ -57,7 +52,6 @@ function gameLoop() {
 
 gameLoop();
 
-// ⌨️ Movimento por teclado
 document.addEventListener('keydown', e => {
   const dir = {
     ArrowUp: [0, -1],
@@ -65,18 +59,15 @@ document.addEventListener('keydown', e => {
     ArrowLeft: [-1, 0],
     ArrowRight: [1, 0]
   }[e.key];
+
   if (dir) {
-    player.destination = {
-      x: player.x + dir[0],
-      y: player.y + dir[1]
-    };
+    handleDirectionalInput(dir[0], dir[1]);
   }
 });
 
-// 🖱️ Movimento por clique
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / 30 + player.x - canvas.width / 60);
   const y = Math.floor((e.clientY - rect.top) / 30 + player.y - canvas.height / 60);
-  player.destination = { x, y };
+  handleClickDestination(x, y);
 });
