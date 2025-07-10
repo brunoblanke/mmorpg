@@ -216,3 +216,4 @@ function movePlayerTo(tx, ty) {
   if (player.x !== tx || player.y !== ty) {
     setTimeout(() => movePlayerTo(tx, ty), player.speed ?? 150);
   }
+}
