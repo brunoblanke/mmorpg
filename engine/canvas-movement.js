@@ -1,10 +1,12 @@
-import { player, walls, enemies, lerp, tileSize, camera } from './canvas-config.js';
+import { player, walls, enemies, lerp, tileSize, canvas, camera } from './canvas-config.js';
 
+// 🔁 Verifica se é possível mover e atualiza posição lógica e animada
 export function tryMove(entity, dx, dy) {
   const nx = entity.x + dx;
   const ny = entity.y + dy;
 
-  const blocked = walls.some(w => w.x === nx && w.y === ny) ||
+  const blocked =
+    walls.some(w => w.x === nx && w.y === ny) ||
     enemies.some(e => e.x === nx && e.y === ny) ||
     (entity !== player && player.x === nx && player.y === ny);
 
@@ -14,9 +16,11 @@ export function tryMove(entity, dx, dy) {
     entity.animationProgress = 0;
     return true;
   }
+
   return false;
 }
 
+// 🚶 Atualiza movimento por destino passo a passo com contorno básico
 export function updatePlayerMovement() {
   if (!player.destination) return;
 
@@ -27,6 +31,7 @@ export function updatePlayerMovement() {
   const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
 
   let moved = false;
+
   if (Math.abs(dx) > Math.abs(dy)) {
     moved = tryMove(player, stepX, 0) || tryMove(player, 0, stepY);
   } else {
@@ -42,6 +47,7 @@ export function updatePlayerMovement() {
   }
 }
 
+// 🌀 Atualiza interpolação suave de movimento
 export function updateEntityAnimation(entity) {
   if (entity.animationProgress < 1) {
     entity.animationProgress += 0.1;
@@ -53,6 +59,7 @@ export function updateEntityAnimation(entity) {
   }
 }
 
+// 🎯 Atualiza câmera para manter player centralizado
 export function updateCamera() {
   camera.x = player.posX * tileSize - canvas.width / 2 + tileSize / 2;
   camera.y = player.posY * tileSize - canvas.height / 2 + tileSize / 2;
