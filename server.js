@@ -7,32 +7,73 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve os arquivos estáticos da raiz do projeto (index.html, style.css, engine/)
+// Serve arquivos estáticos da raiz
 app.use(express.static(__dirname));
-
-// Rota principal (opcional, já é resolvida via arquivos estáticos)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Eventos do Socket.IO
-io.on('connection', (socket) => {
-  console.log(`🟢 Cliente conectado: ${socket.id}`);
+// 🎮 Estado global de inimigos
+let sharedEnemies = [
+  {
+    id: 'Ogro',
+    x: 10, y: 8,
+    health: 100,
+    maxHealth: 100,
+    level: 5,
+    xp: 50,
+    atk: 9,
+    def: 6,
+    spd: 3
+  },
+  {
+    id: 'Goblin',
+    x: 15, y: 12,
+    health: 80,
+    maxHealth: 80,
+    level: 3,
+    xp: 30,
+    atk: 6,
+    def: 4,
+    spd: 4
+  }
+];
 
-  // Recebe posição do jogador e transmite para os outros
+// 🎲 Movimento simples dos inimigos
+function updateEnemies() {
+  for (const e of sharedEnemies) {
+    const dx = Math.floor(Math.random() * 3) - 1;
+    const dy = Math.floor(Math.random() * 3) - 1;
+    e.x = Math.max(0, Math.min(49, e.x + dx));
+    e.y = Math.max(0, Math.min(49, e.y + dy));
+  }
+  io.emit('enemiesUpdated', sharedEnemies);
+}
+
+// Atualiza inimigos periodicamente
+setInterval(updateEnemies, 800); // a cada 800ms
+
+// Conexão com jogadores
+io.on('connection', (socket) => {
+  console.log(`🟢 ${socket.id} conectado`);
+
+  // Envia estado inicial
+  socket.emit('initState', {
+    enemies: sharedEnemies
+  });
+
+  // Recebe movimento do jogador
   socket.on('move', (pos) => {
-    console.log(`📍 Movimento recebido de ${socket.id}:`, pos);
     socket.broadcast.emit('playerMoved', { id: socket.id, pos });
   });
 
-  // Ao desconectar, informa aos outros
+  // Desconexão
   socket.on('disconnect', () => {
-    console.log(`🔴 Cliente desconectado: ${socket.id}`);
+    console.log(`🔴 ${socket.id} desconectado`);
     socket.broadcast.emit('playerDisconnected', socket.id);
   });
 });
 
-// Inicializa o servidor na porta 3000 (ou porta definida via variável de ambiente)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
