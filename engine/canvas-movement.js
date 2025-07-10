@@ -13,6 +13,8 @@ export function tryMoveTo(tile) {
     player.x = final.x;
     player.y = final.y;
 
+    console.log('Emitindo movimento para o servidor:', player.x, player.y);
+    
     if (moved) {
       socket.emit('move', { x: player.x, y: player.y });
     }

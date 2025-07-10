@@ -33,3 +33,8 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+socket.on('move', (pos) => {
+  console.log(`Movimento recebido de ${socket.id}:`, pos);
+  socket.broadcast.emit('playerMoved', { id: socket.id, pos });
+});
