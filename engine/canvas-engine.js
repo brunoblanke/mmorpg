@@ -1,25 +1,44 @@
-import { canvas, ctx, player, enemies } from './canvas-config.js';
-import { drawGrid, drawRect, drawText, drawStats, drawDestinationMarker } from './canvas-draw.js';
-import { updatePlayerMovement, updateEntityAnimation, updateCamera } from './canvas-movement.js';
-import { updateEnemies, animateEnemies } from './canvas-enemies.js';
+import { canvas, ctx, player, enemies, gridSize } from './canvas-config.js';
+import {
+  drawGrid,
+  drawWalls,
+  drawEnemyAreas,
+  drawRect,
+  drawText,
+  drawStats,
+  drawDestinationMarker
+} from './canvas-draw.js';
+
+import {
+  updatePlayerMovement,
+  updateEntityAnimation,
+  updateCamera
+} from './canvas-movement.js';
+
+import {
+  updateEnemies,
+  animateEnemies
+} from './canvas-enemies.js';
 
 function gameLoop() {
-  // Atualiza movimentações
+  // Atualiza movimentações e IA
   updatePlayerMovement();
   updateEnemies();
 
-  // Interpolação suave
+  // Atualiza animações suaves
   updateEntityAnimation(player);
   animateEnemies();
 
-  // Atualiza a câmera
+  // Atualiza câmera baseada na posição interpolada do player
   updateCamera();
 
-  // Renderização
+  // Renderiza tudo
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
 
-  // Player
+  drawGrid(gridSize);
+  drawWalls();
+  drawEnemyAreas();
+
   drawRect(player.posX, player.posY, player.color);
   drawText('Você', player.posX, player.posY);
   drawStats(player);
@@ -27,7 +46,6 @@ function gameLoop() {
     drawDestinationMarker(player.destination.x, player.destination.y);
   }
 
-  // Inimigos
   enemies.forEach(enemy => {
     drawRect(enemy.posX, enemy.posY, enemy.color);
     drawText(enemy.name, enemy.posX, enemy.posY);
