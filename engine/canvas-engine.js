@@ -1,8 +1,8 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
-const gridSize = 50;
 const tileSize = 30;
+const gridSize = 50;
 canvas.width = gridSize * tileSize;
 canvas.height = gridSize * tileSize;
 
@@ -24,12 +24,28 @@ const enemies = [
     detectionRadius: 4,
     patrolRadius: 2,
     chasing: false,
-    target: null
+    target: null,
+    patrolArea: []
   }
 ];
 
-// 🔧 Utilitários
-function drawTileGrid() {
+function generatePatrolArea(enemy) {
+  const area = [];
+  for (let dy = -enemy.patrolRadius; dy <= enemy.patrolRadius; dy++) {
+    for (let dx = -enemy.patrolRadius; dx <= enemy.patrolRadius; dx++) {
+      const tx = enemy.x + dx;
+      const ty = enemy.y + dy;
+      if (tx >= 0 && ty >= 0 && tx < gridSize && ty < gridSize) {
+        area.push({ x: tx, y: ty });
+      }
+    }
+  }
+  enemy.patrolArea = area;
+}
+
+enemies.forEach(generatePatrolArea);
+
+function drawGrid() {
   ctx.strokeStyle = '#1E293B';
   for (let i = 0; i <= gridSize; i++) {
     ctx.beginPath();
@@ -56,21 +72,26 @@ function drawText(txt, x, y) {
   ctx.fillText(txt, x * tileSize + tileSize / 2, y * tileSize - 10);
 }
 
-// 💠 Desenhar área em volta do personagem
-function drawArea(x, y, radius, color) {
-  ctx.fillStyle = color;
-  for (let dy = -radius; dy <= radius; dy++) {
-    for (let dx = -radius; dx <= radius; dx++) {
-      const tx = x + dx;
-      const ty = y + dy;
-      if (tx >= 0 && ty >= 0 && tx < gridSize && ty < gridSize) {
-        ctx.fillRect(tx * tileSize, ty * tileSize, tileSize, tileSize);
-      }
-    }
-  }
+function drawPatrolArea(enemy) {
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+  enemy.patrolArea.forEach(pos => {
+    ctx.fillRect(pos.x * tileSize, pos.y * tileSize, tileSize, tileSize);
+  });
 }
 
-// 🔄 Lógica de inimigo
+function drawDetectionArea(enemy) {
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+  ctx.beginPath();
+  ctx.arc(
+    enemy.x * tileSize + tileSize / 2,
+    enemy.y * tileSize + tileSize / 2,
+    enemy.detectionRadius * tileSize,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+}
+
 function updateEnemy(enemy) {
   const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
   if (dist <= enemy.detectionRadius) {
@@ -79,11 +100,11 @@ function updateEnemy(enemy) {
   } else if (enemy.chasing) {
     enemy.chasing = false;
     enemy.target = null;
-    enemy.patrolOrigin = { x: enemy.x, y: enemy.y };
+    generatePatrolArea(enemy); // novo ponto de patrulha
   }
 
-  const tx = enemy.target?.x ?? player.x + Math.floor(Math.random() * 3 - 1);
-  const ty = enemy.target?.y ?? player.y + Math.floor(Math.random() * 3 - 1);
+  const tx = enemy.target?.x ?? getRandomFrom(enemy.patrolArea)?.x ?? enemy.x;
+  const ty = enemy.target?.y ?? getRandomFrom(enemy.patrolArea)?.y ?? enemy.y;
 
   const blocked = walls.some(w => w.x === tx && w.y === ty) ||
                   enemies.some(e => e !== enemy && e.x === tx && e.y === ty);
@@ -100,22 +121,22 @@ function updateEnemy(enemy) {
   }
 }
 
-// 🎮 Loop principal
+function getRandomFrom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawTileGrid();
+  drawGrid();
 
-  // 🟫 Paredes
   walls.forEach(w => drawRect(w.x, w.y, '#334155'));
 
-  // 🧍‍♂️ Player
   drawRect(player.x, player.y, player.color);
   drawText('Você', player.x, player.y);
 
-  // 👹 Inimigos
   enemies.forEach(enemy => {
-    drawArea(enemy.x, enemy.y, enemy.patrolRadius, 'rgba(59, 130, 246, 0.15)');
-    drawArea(enemy.x, enemy.y, enemy.detectionRadius, 'rgba(16, 185, 129, 0.2)');
+    drawPatrolArea(enemy);
+    drawDetectionArea(enemy);
     drawRect(enemy.x, enemy.y, enemy.color);
     drawText('Goblin', enemy.x, enemy.y);
   });
@@ -129,7 +150,6 @@ function loop() {
 
 loop();
 
-// 🕹️ Movimento do player
 document.addEventListener('keydown', e => {
   const dir = {
     ArrowUp: [0, -1],
