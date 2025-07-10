@@ -1,6 +1,6 @@
 import {
   tileSize, camera, player, walls,
-  enemies, destination
+  enemies
 } from './canvas-config.js';
 import { otherPlayers } from './multiplayer-client.js';
 
@@ -58,12 +58,6 @@ export function drawOthers() {
     const py = p.y * tileSize - camera.y;
     ctx.fillStyle = '#fff';
     ctx.font = '10px sans-serif';
-    ctx.fillText(`Remoto ${id}`, px + 4, py + tileSize - 14);
-  }
-}
-
-export function drawDestinationTile() {
-  if (destination) {
-    drawTile(destination.x, destination.y, 'rgba(0,255,0,0.3)');
+    ctx.fillText(`Remoto`, px + 4, py + tileSize - 14);
   }
 }

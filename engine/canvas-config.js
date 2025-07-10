@@ -25,5 +25,3 @@ export const walls = [
 ];
 
 export const enemies = [];
-
-export let destination = null;
