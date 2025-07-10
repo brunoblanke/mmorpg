@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -7,12 +8,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve arquivos estáticos da pasta public/
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve arquivos estáticos da raiz do projeto
+app.use(express.static(__dirname));
 
 // Rota principal
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Eventos do socket
