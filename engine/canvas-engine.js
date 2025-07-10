@@ -6,16 +6,23 @@ const gridSize = 50;
 canvas.width = gridSize * tileSize;
 canvas.height = gridSize * tileSize;
 
-// 🎮 Objetos do jogador
+// 📊 Fórmulas de atributos por nível
+function calculateStats(level) {
+  return {
+    level,
+    xp: level * 20,
+    attack: 3 + level * 2,
+    defense: 2 + level * 1.5,
+    speed: 1000 - level * 100 // quanto maior o nível, menor o delay
+  };
+}
+
+// 🧍 Player
 const player = {
   x: 5,
   y: 5,
   color: '#E2E8F0',
-  level: 1,
-  xp: 0,
-  attack: 5,
-  defense: 3,
-  speed: 150
+  ...calculateStats(1)
 };
 
 let playerDestination = null;
@@ -34,17 +41,13 @@ const enemies = [
     x: 15,
     y: 15,
     color: '#FBBF24',
-    speed: 800,
+    ...calculateStats(2),
     detectionRadius: 4,
     patrolRadius: 2,
     chasing: false,
     target: null,
     patrolArea: [],
-    lastMove: 0,
-    level: 2,
-    xp: 15,
-    attack: 4,
-    defense: 2
+    lastMove: 0
   },
   {
     id: 'enemy2',
@@ -52,17 +55,13 @@ const enemies = [
     x: 35,
     y: 35,
     color: '#EF4444',
-    speed: 400,
+    ...calculateStats(5),
     detectionRadius: 7,
     patrolRadius: 5,
     chasing: false,
     target: null,
     patrolArea: [],
-    lastMove: 0,
-    level: 5,
-    xp: 50,
-    attack: 9,
-    defense: 6
+    lastMove: 0
   }
 ];
 
@@ -82,7 +81,7 @@ function generatePatrolArea(enemy) {
 
 enemies.forEach(generatePatrolArea);
 
-// 🎨 Grid do mapa
+// 🎨 Grid
 function drawGrid() {
   ctx.strokeStyle = '#1E293B';
   for (let i = 0; i <= gridSize; i++) {
@@ -98,7 +97,7 @@ function drawGrid() {
   }
 }
 
-// 📦 Render básicos
+// 📦 Render
 function drawRect(x, y, color) {
   ctx.fillStyle = color;
   ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
@@ -244,25 +243,13 @@ function tryMove(dx, dy) {
   if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && !blocked) {
     player.x = nx;
     player.y = ny;
+    return true;
   }
+  return false;
 }
 
-// 🚶 Movimento por clique
+// 🚶 Movimento por clique com tentativa de contorno
 function movePlayerTo(tx, ty) {
   const dx = tx - player.x;
   const dy = ty - player.y;
-  const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
-  const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    tryMove(stepX, 0);
-  } else {
-    tryMove(0, stepY);
-  }
-
-  if (player.x !== tx || player.y !== ty) {
-    setTimeout(() => movePlayerTo(tx, ty), player.speed);
-  } else {
-    playerDestination = null; // chegou ao destino, remove borda
-  }
-}
+  const stepX = dx > 
