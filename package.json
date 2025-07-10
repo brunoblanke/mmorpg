@@ -4,5 +4,9 @@
   "scripts": {
     "start": "npx serve ."
   },
-  "dependencies": {}
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
