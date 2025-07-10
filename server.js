@@ -5,7 +5,6 @@ import { Server } from 'socket.io';
 const app = express();
 const server = createServer(app);
 
-// Permite conexão WebSocket em qualquer origem
 const io = new Server(server, {
   cors: {
     origin: '*',
@@ -13,7 +12,7 @@ const io = new Server(server, {
   }
 });
 
-app.use(express.static('public')); // Pasta com HTML e engine
+app.use(express.static('public'));
 
 const players = {};
 
@@ -33,7 +32,6 @@ io.on('connection', socket => {
   });
 });
 
-// Railway define porta pelo env.PORT
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`✅ Servidor rodando na porta ${PORT}`);
