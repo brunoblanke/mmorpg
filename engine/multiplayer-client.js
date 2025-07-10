@@ -1,42 +1,42 @@
 import { io } from "https://cdn.socket.io/4.7.2/socket.io.esm.min.js";
 import { player, enemies } from './canvas-config.js';
 
-export const socket = io(); // conecta ao servidor
-export const otherPlayers = {}; // jogadores remotos
+export const socket = io();
+export const otherPlayers = {};
 
-// 🎮 Recebe o estado inicial do servidor
-socket.on('initState', (data) => {
-  enemies.length = 0; // limpa lista atual
-  for (const enemy of data.enemies) {
-    enemies.push({ ...enemy }); // recria os inimigos conforme dados recebidos
-  }
+// ✅ Informa ao servidor a posição inicial logo ao conectar
+socket.on('connect', () => {
+  console.log('✅ Conectado como', socket.id);
+  socket.emit('move', { x: player.x, y: player.y }); // envia posição inicial
 });
 
-// 🔄 Atualiza posição dos inimigos periodicamente
-socket.on('enemiesUpdated', (updatedEnemies) => {
-  enemies.length = 0; // sobrescreve lista local
-  for (const data of updatedEnemies) {
-    enemies.push({ ...data }); // preserva propriedades via clone
-  }
+socket.on('disconnect', () => {
+  console.log('🚫 Desconectado do servidor.');
 });
 
-// 🧍 Atualiza posição dos jogadores remotos
+// 🧍 Atualiza lista de jogadores remotos
 socket.on('playerMoved', ({ id, pos }) => {
   if (id !== socket.id) {
     otherPlayers[id] = pos;
   }
 });
 
-// ❌ Remove jogador desconectado da lista
 socket.on('playerDisconnected', (id) => {
   delete otherPlayers[id];
 });
 
-// 📡 Logs para depuração
-socket.on('connect', () => {
-  console.log('✅ Conectado ao servidor como:', socket.id);
+// 💀 Estado inicial dos inimigos ao conectar
+socket.on('initState', (data) => {
+  enemies.length = 0;
+  for (const enemy of data.enemies) {
+    enemies.push({ ...enemy });
+  }
 });
 
-socket.on('disconnect', () => {
-  console.log('🚫 Desconectado do servidor.');
+// 🔁 Sincroniza inimigos periodicamente
+socket.on('enemiesUpdated', (updatedEnemies) => {
+  enemies.length = 0;
+  for (const e of updatedEnemies) {
+    enemies.push({ ...e });
+  }
 });

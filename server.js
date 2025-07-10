@@ -7,39 +7,24 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve arquivos estáticos da raiz
 app.use(express.static(__dirname));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 🎮 Estado global de inimigos
+// 💀 Estado global dos inimigos
 let sharedEnemies = [
   {
-    id: 'Ogro',
-    x: 10, y: 8,
-    health: 100,
-    maxHealth: 100,
-    level: 5,
-    xp: 50,
-    atk: 9,
-    def: 6,
-    spd: 3
+    id: 'Ogro', x: 10, y: 8, health: 100, maxHealth: 100,
+    level: 5, xp: 50, atk: 9, def: 6, spd: 3
   },
   {
-    id: 'Goblin',
-    x: 15, y: 12,
-    health: 80,
-    maxHealth: 80,
-    level: 3,
-    xp: 30,
-    atk: 6,
-    def: 4,
-    spd: 4
+    id: 'Goblin', x: 15, y: 12, health: 80, maxHealth: 80,
+    level: 3, xp: 30, atk: 6, def: 4, spd: 4
   }
 ];
 
-// 🎲 Movimento simples dos inimigos
+// ✅ Movimento simples dos inimigos (servidor centralizado)
 function updateEnemies() {
   for (const e of sharedEnemies) {
     const dx = Math.floor(Math.random() * 3) - 1;
@@ -50,19 +35,18 @@ function updateEnemies() {
   io.emit('enemiesUpdated', sharedEnemies);
 }
 
-// Atualiza inimigos periodicamente
-setInterval(updateEnemies, 800); // a cada 800ms
+setInterval(updateEnemies, 800);
 
-// Conexão com jogadores
+// 📡 Conexão com jogadores
 io.on('connection', (socket) => {
   console.log(`🟢 ${socket.id} conectado`);
 
-  // Envia estado inicial
+  // Envia estado inicial dos inimigos
   socket.emit('initState', {
     enemies: sharedEnemies
   });
 
-  // Recebe movimento do jogador
+  // Recebe movimentação do jogador
   socket.on('move', (pos) => {
     socket.broadcast.emit('playerMoved', { id: socket.id, pos });
   });
