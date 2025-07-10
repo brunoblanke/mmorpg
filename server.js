@@ -7,13 +7,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// 📂 Servir arquivos estáticos da raiz do projeto
 app.use(express.static(__dirname));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 💾 Estado global do jogo
+// Estados globais
 let playerStates = {}; // { socket.id: { x, y } }
 let sharedEnemies = [
   {
@@ -26,11 +25,11 @@ let sharedEnemies = [
     id: 'Goblin', x: 15, y: 12,
     health: 80, maxHealth: 80,
     level: 3, xp: 30,
-    atk: 6, def: 4, spd: 4
+    atk: 6, def: 4, spd: 2
   }
 ];
 
-// 🎯 Identifica o jogador mais próximo dentro do alcance
+// Busca jogador mais próximo
 function getClosestPlayer(enemy) {
   let closest = null;
   let minDist = Infinity;
@@ -43,67 +42,59 @@ function getClosestPlayer(enemy) {
     }
   }
 
-  return (minDist <= 5) ? closest : null;
+  return (minDist <= 6) ? closest : null;
 }
 
-// 🧠 Atualiza a movimentação dos inimigos com IA centralizada
+// Lógica de perseguição respeitando SPD
 function updateEnemies() {
   for (const e of sharedEnemies) {
     const target = getClosestPlayer(e);
+    const steps = Math.max(1, e.spd || 1); // garante pelo menos 1 passo
 
-    if (target) {
-      const dx = Math.sign(target.x - e.x);
-      const dy = Math.sign(target.y - e.y);
+    for (let s = 0; s < steps; s++) {
+      if (target) {
+        const dx = Math.sign(target.x - e.x);
+        const dy = Math.sign(target.y - e.y);
+        const nx = e.x + dx;
+        const ny = e.y + dy;
 
-      const nx = e.x + dx;
-      const ny = e.y + dy;
+        const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
+        if (!occupied) {
+          e.x = Math.max(0, Math.min(49, nx));
+          e.y = Math.max(0, Math.min(49, ny));
+        }
+      } else {
+        // patrulha aleatória
+        const dx = Math.floor(Math.random() * 3) - 1;
+        const dy = Math.floor(Math.random() * 3) - 1;
+        const nx = e.x + dx;
+        const ny = e.y + dy;
 
-      // ❌ Não pisa em cima de jogadores
-      const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
-
-      if (!occupied) {
-        e.x = Math.max(0, Math.min(49, nx));
-        e.y = Math.max(0, Math.min(49, ny));
-      }
-    } else {
-      // 🟢 Patrulha aleatória quando não está perseguindo
-      const dx = Math.floor(Math.random() * 3) - 1;
-      const dy = Math.floor(Math.random() * 3) - 1;
-
-      const nx = Math.max(0, Math.min(49, e.x + dx));
-      const ny = Math.max(0, Math.min(49, e.y + dy));
-
-      // ❌ Evita pisar em jogadores mesmo durante patrulha
-      const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
-
-      if (!occupied) {
-        e.x = nx;
-        e.y = ny;
+        const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
+        if (!occupied) {
+          e.x = Math.max(0, Math.min(49, nx));
+          e.y = Math.max(0, Math.min(49, ny));
+        }
       }
     }
   }
 
-  // 🔁 Transmite posições atualizadas para todos os clientes
   io.emit('enemiesUpdated', sharedEnemies);
 }
 
-// 🕐 Frequência de atualização mais rápida
-setInterval(updateEnemies, 100); // 10 vezes por segundo
+setInterval(updateEnemies, 200); // taxa segura e fluida
 
-// 🔌 Conexão com clientes
+// Socket
 io.on('connection', (socket) => {
   console.log(`🟢 ${socket.id} conectado`);
 
-  // Envia estado inicial dos inimigos ao jogador que entrou
   socket.emit('initState', { enemies: sharedEnemies });
 
-  // Recebe e armazena posição do jogador
   socket.on('move', (pos) => {
     playerStates[socket.id] = pos;
     socket.broadcast.emit('playerMoved', { id: socket.id, pos });
   });
 
-  // Remove jogador ao desconectar
   socket.on('disconnect', () => {
     delete playerStates[socket.id];
     socket.broadcast.emit('playerDisconnected', socket.id);
@@ -111,8 +102,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// 🚀 Inicializa servidor
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🎮 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
