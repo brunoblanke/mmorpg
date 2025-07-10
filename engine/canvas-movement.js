@@ -1,4 +1,4 @@
-import { player, camera, canvas, tileSize, enemies, walls } from './canvas-config.js';
+import { player, canvas, camera, tileSize, enemies, walls } from './canvas-config.js';
 import { findPath } from './pathfinding.js';
 
 export function tryMoveTo(tile) {
@@ -27,16 +27,16 @@ export function tryMove(entity, dx, dy) {
   return true;
 }
 
+export function handleClickDestination(tx, ty) {
+  tryMoveTo({ x: tx, y: ty });
+}
+
 export function handleDirectionalInput(dx, dy) {
   tryMove(player, dx, dy);
 }
 
 export function updatePlayerMovement() {
-  // Sem animação
-}
-
-export function handleClickDestination(tx, ty) {
-  tryMoveTo({ x: tx, y: ty });
+  // Sem interpolação — movimento instantâneo
 }
 
 export function updateCamera() {

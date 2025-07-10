@@ -2,7 +2,7 @@ import { player } from './canvas-config.js';
 
 export const otherPlayers = {};
 
-const socket = io();
+const socket = io(window.location.origin);
 
 socket.on('init', data => {
   for (const id in data) {

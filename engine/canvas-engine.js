@@ -42,8 +42,10 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
-  const tx = Math.floor((mx + camera.x) / 50);
-  const ty = Math.floor((my + camera.y) / 50);
+
+  const tx = Math.floor((mx + camera.x) / tileSize);
+  const ty = Math.floor((my + camera.y) / tileSize);
+
   handleClickDestination(tx, ty);
 });
 
