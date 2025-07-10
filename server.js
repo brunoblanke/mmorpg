@@ -7,12 +7,13 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// 📂 Servir arquivos estáticos da raiz do projeto
 app.use(express.static(__dirname));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 💾 Estado dos jogadores e inimigos
+// 💾 Estado global do jogo
 let playerStates = {}; // { socket.id: { x, y } }
 let sharedEnemies = [
   {
@@ -29,10 +30,11 @@ let sharedEnemies = [
   }
 ];
 
-// 👁️ Busca jogador mais próximo
+// 🎯 Identifica o jogador mais próximo dentro do alcance
 function getClosestPlayer(enemy) {
   let closest = null;
   let minDist = Infinity;
+
   for (const pos of Object.values(playerStates)) {
     const dist = Math.abs(pos.x - enemy.x) + Math.abs(pos.y - enemy.y);
     if (dist < minDist) {
@@ -40,10 +42,11 @@ function getClosestPlayer(enemy) {
       closest = pos;
     }
   }
+
   return (minDist <= 5) ? closest : null;
 }
 
-// 🧠 IA dos inimigos com respeito à colisão com jogadores
+// 🧠 Atualiza a movimentação dos inimigos com IA centralizada
 function updateEnemies() {
   for (const e of sharedEnemies) {
     const target = getClosestPlayer(e);
@@ -51,9 +54,11 @@ function updateEnemies() {
     if (target) {
       const dx = Math.sign(target.x - e.x);
       const dy = Math.sign(target.y - e.y);
+
       const nx = e.x + dx;
       const ny = e.y + dy;
 
+      // ❌ Não pisa em cima de jogadores
       const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
 
       if (!occupied) {
@@ -61,32 +66,44 @@ function updateEnemies() {
         e.y = Math.max(0, Math.min(49, ny));
       }
     } else {
+      // 🟢 Patrulha aleatória quando não está perseguindo
       const dx = Math.floor(Math.random() * 3) - 1;
       const dy = Math.floor(Math.random() * 3) - 1;
-      e.x = Math.max(0, Math.min(49, e.x + dx));
-      e.y = Math.max(0, Math.min(49, e.y + dy));
+
+      const nx = Math.max(0, Math.min(49, e.x + dx));
+      const ny = Math.max(0, Math.min(49, e.y + dy));
+
+      // ❌ Evita pisar em jogadores mesmo durante patrulha
+      const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
+
+      if (!occupied) {
+        e.x = nx;
+        e.y = ny;
+      }
     }
   }
 
+  // 🔁 Transmite posições atualizadas para todos os clientes
   io.emit('enemiesUpdated', sharedEnemies);
 }
 
-setInterval(updateEnemies, 800);
+// 🕐 Frequência de atualização mais rápida
+setInterval(updateEnemies, 100); // 10 vezes por segundo
 
-// 📡 Conexão via socket
+// 🔌 Conexão com clientes
 io.on('connection', (socket) => {
   console.log(`🟢 ${socket.id} conectado`);
 
-  // Envia estado inicial
+  // Envia estado inicial dos inimigos ao jogador que entrou
   socket.emit('initState', { enemies: sharedEnemies });
 
-  // Salva estado do jogador
+  // Recebe e armazena posição do jogador
   socket.on('move', (pos) => {
     playerStates[socket.id] = pos;
     socket.broadcast.emit('playerMoved', { id: socket.id, pos });
   });
 
-  // Remoção ao desconectar
+  // Remove jogador ao desconectar
   socket.on('disconnect', () => {
     delete playerStates[socket.id];
     socket.broadcast.emit('playerDisconnected', socket.id);
@@ -94,7 +111,8 @@ io.on('connection', (socket) => {
   });
 });
 
+// 🚀 Inicializa servidor
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`🎮 Servidor rodando em http://localhost:${PORT}`);
 });
