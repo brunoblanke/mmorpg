@@ -10,17 +10,17 @@ export function tryMove(entity, dx, dy) {
 
   const blocked =
     walls.some(w => w.x === nx && w.y === ny) ||
-    enemies.some(e => e !== entity && e.x === nx && e.y === ny) ||
+    enemies.some(e => e.x === nx && e.y === ny) ||
+    (entity === player && enemies.some(e => e.x === nx && e.y === ny)) ||
     (entity !== player && player.x === nx && player.y === ny);
 
-  if (
-    nx >= 0 && ny >= 0 &&
-    nx < 50 && ny < 50 &&
-    !blocked
-  ) {
+  const dentroDosLimites = nx >= 0 && ny >= 0 && nx < 50 && ny < 50;
+
+  if (!blocked && dentroDosLimites) {
     currentStep = { fromX: entity.x, fromY: entity.y, toX: nx, toY: ny };
     movementStartTime = performance.now();
     isMoving = true;
+    entity.animationProgress = 0;
     return true;
   }
 
@@ -47,13 +47,15 @@ export function updatePlayerMovement() {
 }
 
 export function handleDirectionalInput(dx, dy) {
-  player.destination = null;
+  player.destination = null; // cancela clique anterior
 
   if (isMoving) return;
 
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  tryMove(player, dx, dy);
+  const moved = tryMove(player, dx, dy);
+  if (!moved) {
+    currentStep = null;
+    isMoving = false;
+  }
 }
 
 export function handleClickDestination(tx, ty) {
@@ -68,14 +70,17 @@ export function handleClickDestination(tx, ty) {
     const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
     const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
 
+    let moved = false;
+
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (!tryMove(player, stepX, 0)) {
-        tryMove(player, 0, stepY);
-      }
+      moved = tryMove(player, stepX, 0) || tryMove(player, 0, stepY);
     } else {
-      if (!tryMove(player, 0, stepY)) {
-        tryMove(player, stepX, 0);
-      }
+      moved = tryMove(player, 0, stepY) || tryMove(player, stepX, 0);
+    }
+
+    if (!moved) {
+      currentStep = null;
+      isMoving = false;
     }
   }
 }
