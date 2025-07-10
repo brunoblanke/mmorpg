@@ -4,18 +4,21 @@ let movementStartTime = 0;
 let isMoving = false;
 let currentStep = null;
 
-export function tryStepTo(nx, ny) {
+export function tryMove(entity, dx, dy) {
+  const nx = entity.x + dx;
+  const ny = entity.y + dy;
+
   const blocked =
     walls.some(w => w.x === nx && w.y === ny) ||
-    enemies.some(e => e.x === nx && e.y === ny) ||
-    (player.x === nx && player.y === ny);
+    enemies.some(e => e !== entity && e.x === nx && e.y === ny) ||
+    (entity !== player && player.x === nx && player.y === ny);
 
   if (
     nx >= 0 && ny >= 0 &&
     nx < 50 && ny < 50 &&
     !blocked
   ) {
-    currentStep = { fromX: player.x, fromY: player.y, toX: nx, toY: ny };
+    currentStep = { fromX: entity.x, fromY: entity.y, toX: nx, toY: ny };
     movementStartTime = performance.now();
     isMoving = true;
     return true;
@@ -44,13 +47,13 @@ export function updatePlayerMovement() {
 }
 
 export function handleDirectionalInput(dx, dy) {
-  player.destination = null; // cancela clique anterior
+  player.destination = null;
 
-  if (isMoving) return; // espera terminar movimento atual
+  if (isMoving) return;
 
   const nx = player.x + dx;
   const ny = player.y + dy;
-  tryStepTo(nx, ny);
+  tryMove(player, dx, dy);
 }
 
 export function handleClickDestination(tx, ty) {
@@ -59,21 +62,33 @@ export function handleClickDestination(tx, ty) {
   isMoving = false;
 
   const dx = tx - player.x;
-  const dy = tx - player.y;
+  const dy = ty - player.y;
 
   if (dx !== 0 || dy !== 0) {
     const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
     const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
 
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (!tryStepTo(player.x + stepX, player.y)) {
-        tryStepTo(player.x, player.y + stepY);
+      if (!tryMove(player, stepX, 0)) {
+        tryMove(player, 0, stepY);
       }
     } else {
-      if (!tryStepTo(player.x, player.y + stepY)) {
-        tryStepTo(player.x + stepX, player.y);
+      if (!tryMove(player, 0, stepY)) {
+        tryMove(player, stepX, 0);
       }
     }
+  }
+}
+
+export function updateEntityAnimation(entity) {
+  if (entity.animationProgress < 1) {
+    const delta = 1 / (entity.speed / 16);
+    entity.animationProgress += delta;
+    entity.posX = lerp(entity.posX, entity.x, entity.animationProgress);
+    entity.posY = lerp(entity.posY, entity.y, entity.animationProgress);
+  } else {
+    entity.posX = entity.x;
+    entity.posY = entity.y;
   }
 }
 
