@@ -3,7 +3,7 @@ body, html {
   padding: 0;
   height: 100vh;
   width: 100vw;
-  background: #121212;
+  background-color: #0F172A; /* Railway-style dark navy */
   font-family: sans-serif;
   overflow: hidden;
 }
@@ -24,75 +24,106 @@ body, html {
 .tile {
   width: 30px;
   height: 30px;
-  border: 1px solid #2b2b2b;
-  background: #3a3a3a;
-  box-sizing: border-box;
+  background-color: transparent;
+  position: relative;
 }
 
-.wall { background: #555; }
-.spawn { box-shadow: inset 0 0 0 2px #007bff; }
-.destination { box-shadow: inset 0 0 0 2px #aaa; }
+.tile::before {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background-color: #1E293B; /* Point style matching Railway */
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
 
-.area-enemy1 { background-color: rgba(0, 255, 0, 0.15); }
-.area-enemy2 { background-color: rgba(255, 0, 0, 0.15); }
+.wall {
+  background-color: #334155;
+}
 
-.detect-enemy1 { outline: 1px dashed lime; }
-.detect-enemy2 { outline: 1px dashed crimson; }
+.spawn {
+  background-color: #2563EB22; /* Slight blue glow for spawn */
+}
+
+.destination {
+  background-color: #94A3B833; /* Soft light indication */
+}
+
+/* Railway-inspired detection and patrol areas */
+.area-enemy1 {
+  background-color: #10B98133; /* Green fill for patrol */
+}
+.area-enemy2 {
+  background-color: #F59E0B33; /* Amber fill for patrol */
+}
+
+.detect-enemy1 {
+  background-color: #22D3EE33; /* Cyan fill for detection */
+}
+.detect-enemy2 {
+  background-color: #FB718533; /* Rose fill for detection */
+}
 
 .player {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #d6d6d6;
+  background-color: #E2E8F0;
+  z-index: 2;
 }
 
-.enemy { background: #aa3; }
-.other-player { background: #4caf50; }
+.enemy {
+  background-color: #FBBF24;
+}
+
+.other-player {
+  background-color: #60A5FA;
+}
 
 .name-tag {
   position: absolute;
-  top: -18px;
+  top: -26px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: bold;
-  color: #fff;
-  text-shadow: 0 0 2px #000;
+  color: #F8FAFC;
+  text-shadow: 0 0 1px #000;
   pointer-events: none;
-  z-index: 10;
+  z-index: 5;
 }
 
 .hp-bar {
   position: absolute;
-  top: -6px;
+  top: -14px;
   left: 50%;
   transform: translateX(-50%);
   width: 26px;
   height: 4px;
-  background: #222;
-  border: 1px solid #333;
+  background-color: #1E293B;
+  border: 1px solid #334155;
   overflow: hidden;
+  z-index: 5;
 }
 
 .hp-fill {
   height: 100%;
-  background-color: #e74c3c;
+  background-color: #EF4444;
 }
 
-.player-info, .enemy-info {
+.player-info,
+.enemy-info {
   position: absolute;
   top: 110%;
   left: 50%;
   transform: translateX(-50%);
   font-size: 8px;
-  color: #fff;
+  color: #F1F5F9;
   text-align: center;
   line-height: 1.2;
   pointer-events: none;
   z-index: 5;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 2px 4px;
-  border-radius: 3px;
-  box-shadow: 0 0 2px #000;
   white-space: nowrap;
 }

@@ -66,6 +66,9 @@ export function patrolEnemies(enemies, walls, player) {
       if (enemy.isChasing) {
         enemy.isChasing = false;
         $('.player.highlighted').removeClass('highlighted');
+        // 🧭 Novo ponto de patrulha após perseguição
+        enemy.patrolOrigin = { x: enemy.x, y: enemy.y };
+        enemy.patrolArea = generateArea(enemy.x, enemy.y, 2);
       }
     }
 
@@ -76,7 +79,8 @@ export function patrolEnemies(enemies, walls, player) {
     const path = findPath(
       { x: enemy.x, y: enemy.y },
       destination,
-      (x, y) => walls.some(w => w.x === x && w.y === y),
+      (x, y) => walls.some(w => w.x === x && w.y === y) ||
+                enemies.some(e => e !== enemy && e.x === x && e.y === y),
       50
     );
 
@@ -109,7 +113,7 @@ export function patrolEnemies(enemies, walls, player) {
       `);
 
       step++;
-    }, Math.max(80, enemy.speed * 0.6)); // movimento mais ágil
+    }, Math.max(80, enemy.speed * 0.6));
 
     updateDetectionVisual(enemy);
   });

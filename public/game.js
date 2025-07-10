@@ -61,7 +61,7 @@ const enemies = [
   }
 ];
 
-// Define áreas de patrulha antes do mapa
+// Define patrulha e detecção
 enemies.forEach(enemy => {
   enemy.detectionRadius = 4;
   enemy.isChasing = false;
@@ -95,8 +95,8 @@ let moveInterval = null;
 
 buildMap($mapContainer, gridSize, spawnPoint, walls, enemies);
 spawnEnemies(enemies);
-renderPlayer(); // ✅ Garante que o jogador aparece logo no início
-setInterval(() => patrolEnemies(enemies, walls, player), 1500); // movimento mais dinâmico
+renderPlayer();
+setInterval(() => patrolEnemies(enemies, walls, player), 1500);
 
 function renderPlayer() {
   $('.player:not(.other-player):not(.enemy)').remove();
@@ -127,11 +127,12 @@ function attemptMove(x, y) {
   );
 
   const isWall = walls.some(w => w.x === x && w.y === y);
+  const isEnemy = enemies.some(e => e.x === x && e.y === y);
 
   if (
     x >= 0 && x < gridSize &&
     y >= 0 && y < gridSize &&
-    !isWall && !isOccupied
+    !isWall && !isOccupied && !isEnemy
   ) {
     player.x = x;
     player.y = y;
@@ -147,7 +148,8 @@ function moveToTile(tx, ty) {
     { x: tx, y: ty },
     (x, y) =>
       walls.some(w => w.x === x && w.y === y) ||
-      Object.values(playerPositions).some(p => p.x === x && p.y === y),
+      Object.values(playerPositions).some(p => p.x === x && p.y === y) ||
+      enemies.some(e => e.x === x && e.y === y),
     gridSize
   );
 
