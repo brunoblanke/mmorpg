@@ -1,5 +1,5 @@
 // engine/multiplayer-client.js
-import { io } from 'socket.io-client';
+import { io } from "https://cdn.socket.io/4.7.2/socket.io.esm.min.js";
 import { player } from './canvas-config.js';
 
 export const socket = io();
