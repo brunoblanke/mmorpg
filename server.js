@@ -13,13 +13,23 @@ app.get('/', (req, res) => {
 });
 
 // 💾 Estado dos jogadores e inimigos
-let playerStates = {};
+let playerStates = {}; // { socket.id: { x, y } }
 let sharedEnemies = [
-  { id: 'Ogro', x: 10, y: 8, health: 100, maxHealth: 100, level: 5, xp: 50, atk: 9, def: 6, spd: 3 },
-  { id: 'Goblin', x: 15, y: 12, health: 80, maxHealth: 80, level: 3, xp: 30, atk: 6, def: 4, spd: 4 }
+  {
+    id: 'Ogro', x: 10, y: 8,
+    health: 100, maxHealth: 100,
+    level: 5, xp: 50,
+    atk: 9, def: 6, spd: 3
+  },
+  {
+    id: 'Goblin', x: 15, y: 12,
+    health: 80, maxHealth: 80,
+    level: 3, xp: 30,
+    atk: 6, def: 4, spd: 4
+  }
 ];
 
-// 🎯 IA de perseguição
+// 👁️ Busca jogador mais próximo
 function getClosestPlayer(enemy) {
   let closest = null;
   let minDist = Infinity;
@@ -33,14 +43,23 @@ function getClosestPlayer(enemy) {
   return (minDist <= 5) ? closest : null;
 }
 
+// 🧠 IA dos inimigos com respeito à colisão com jogadores
 function updateEnemies() {
   for (const e of sharedEnemies) {
     const target = getClosestPlayer(e);
+
     if (target) {
       const dx = Math.sign(target.x - e.x);
       const dy = Math.sign(target.y - e.y);
-      e.x = Math.max(0, Math.min(49, e.x + dx));
-      e.y = Math.max(0, Math.min(49, e.y + dy));
+      const nx = e.x + dx;
+      const ny = e.y + dy;
+
+      const occupied = Object.values(playerStates).some(p => p.x === nx && p.y === ny);
+
+      if (!occupied) {
+        e.x = Math.max(0, Math.min(49, nx));
+        e.y = Math.max(0, Math.min(49, ny));
+      }
     } else {
       const dx = Math.floor(Math.random() * 3) - 1;
       const dy = Math.floor(Math.random() * 3) - 1;
@@ -54,17 +73,20 @@ function updateEnemies() {
 
 setInterval(updateEnemies, 800);
 
-// 📡 Socket
+// 📡 Conexão via socket
 io.on('connection', (socket) => {
   console.log(`🟢 ${socket.id} conectado`);
 
+  // Envia estado inicial
   socket.emit('initState', { enemies: sharedEnemies });
 
+  // Salva estado do jogador
   socket.on('move', (pos) => {
     playerStates[socket.id] = pos;
     socket.broadcast.emit('playerMoved', { id: socket.id, pos });
   });
 
+  // Remoção ao desconectar
   socket.on('disconnect', () => {
     delete playerStates[socket.id];
     socket.broadcast.emit('playerDisconnected', socket.id);
