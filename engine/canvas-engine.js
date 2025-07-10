@@ -20,12 +20,18 @@ const enemies = [
     x: 15,
     y: 15,
     color: '#FBBF24',
-    speed: 1,
+    speed: 800,
     detectionRadius: 4,
     patrolRadius: 2,
     chasing: false,
     target: null,
-    patrolArea: []
+    patrolArea: [],
+    lastMove: 0,
+    name: 'Goblin',
+    level: 2,
+    attack: 4,
+    defense: 2,
+    xp: 15
   }
 ];
 
@@ -50,12 +56,12 @@ function drawGrid() {
   for (let i = 0; i <= gridSize; i++) {
     ctx.beginPath();
     ctx.moveTo(i * tileSize, 0);
-    ctx.lineTo(i * tileSize, gridSize * tileSize);
+    ctx.lineTo(i * tileSize, canvas.height);
     ctx.stroke();
 
     ctx.beginPath();
     ctx.moveTo(0, i * tileSize);
-    ctx.lineTo(gridSize * tileSize, i * tileSize);
+    ctx.lineTo(canvas.width, i * tileSize);
     ctx.stroke();
   }
 }
@@ -65,11 +71,19 @@ function drawRect(x, y, color) {
   ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 }
 
-function drawText(txt, x, y) {
+function drawNameTag(txt, x, y) {
   ctx.fillStyle = '#F8FAFC';
+  ctx.font = '10px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(txt, x * tileSize + tileSize / 2, y * tileSize - 6);
+}
+
+function drawStats(stats, x, y) {
+  ctx.fillStyle = '#F1F5F9';
   ctx.font = '8px Segoe UI';
   ctx.textAlign = 'center';
-  ctx.fillText(txt, x * tileSize + tileSize / 2, y * tileSize - 10);
+  const info = `LVL:${stats.level} XP:${stats.xp} ATK:${stats.attack} DEF:${stats.defense}`;
+  ctx.fillText(info, x * tileSize + tileSize / 2, y * tileSize + tileSize + 10);
 }
 
 function drawPatrolArea(enemy) {
@@ -93,6 +107,10 @@ function drawDetectionArea(enemy) {
 }
 
 function updateEnemy(enemy) {
+  const now = Date.now();
+  if (now - enemy.lastMove < enemy.speed) return;
+  enemy.lastMove = now;
+
   const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
   if (dist <= enemy.detectionRadius) {
     enemy.chasing = true;
@@ -100,7 +118,7 @@ function updateEnemy(enemy) {
   } else if (enemy.chasing) {
     enemy.chasing = false;
     enemy.target = null;
-    generatePatrolArea(enemy); // novo ponto de patrulha
+    generatePatrolArea(enemy);
   }
 
   const tx = enemy.target?.x ?? getRandomFrom(enemy.patrolArea)?.x ?? enemy.x;
@@ -132,13 +150,15 @@ function draw() {
   walls.forEach(w => drawRect(w.x, w.y, '#334155'));
 
   drawRect(player.x, player.y, player.color);
-  drawText('Você', player.x, player.y);
+  drawNameTag('Você', player.x, player.y);
+  drawStats({ level: 1, xp: 0, attack: 5, defense: 3 }, player.x, player.y);
 
   enemies.forEach(enemy => {
     drawPatrolArea(enemy);
     drawDetectionArea(enemy);
     drawRect(enemy.x, enemy.y, enemy.color);
-    drawText('Goblin', enemy.x, enemy.y);
+    drawNameTag(enemy.name, enemy.x, enemy.y);
+    drawStats(enemy, enemy.x, enemy.y);
   });
 }
 
@@ -150,6 +170,7 @@ function loop() {
 
 loop();
 
+// 🎮 Teclado
 document.addEventListener('keydown', e => {
   const dir = {
     ArrowUp: [0, -1],
@@ -157,20 +178,41 @@ document.addEventListener('keydown', e => {
     ArrowLeft: [-1, 0],
     ArrowRight: [1, 0]
   }[e.key];
-  if (dir) {
-    const nx = player.x + dir[0];
-    const ny = player.y + dir[1];
-
-    const blocked = walls.some(w => w.x === nx && w.y === ny) ||
-      enemies.some(e => e.x === nx && e.y === ny);
-
-    if (
-      nx >= 0 && nx < gridSize &&
-      ny >= 0 && ny < gridSize &&
-      !blocked
-    ) {
-      player.x = nx;
-      player.y = ny;
-    }
-  }
+  if (dir) tryMove(dir[0], dir[1]);
 });
+
+// 🖱️ Clique
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / tileSize);
+  const y = Math.floor((e.clientY - rect.top) / tileSize);
+  movePlayerTo(x, y);
+});
+
+function tryMove(dx, dy) {
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  const blocked = walls.some(w => w.x === nx && w.y === ny) ||
+    enemies.some(e => e.x === nx && e.y === ny);
+  if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && !blocked) {
+    player.x = nx;
+    player.y = ny;
+  }
+}
+
+function movePlayerTo(tx, ty) {
+  const dx = tx - player.x;
+  const dy = ty - player.y;
+
+  const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+  const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    tryMove(stepX, 0);
+  } else {
+    tryMove(0, stepY);
+  }
+
+  if (player.x !== tx || player.y !== ty) {
+    setTimeout(() => movePlayerTo(tx, ty), player.speed ?? 150);
+  }
