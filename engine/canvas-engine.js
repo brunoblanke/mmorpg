@@ -2,43 +2,33 @@ import { canvas, ctx, player, camera, tileSize } from './canvas-config.js';
 import {
   updatePlayerMovement,
   updateCamera,
-  handleClickDestination,
   handleDirectionalInput
 } from './canvas-movement.js';
-import { drawGrid, drawWalls, drawPlayer, drawEnemies, drawOthers } from './canvas-draw.js';
-import { updateEnemyMovements } from './canvas-enemies.js';
+import {
+  drawGrid,
+  drawWalls,
+  drawPlayer,
+  drawEnemies,
+  drawOthers
+} from './canvas-draw.js';
 
-/**
- * Loop principal do jogo — renderiza e atualiza tudo a cada quadro.
- */
+// 🎮 Loop principal do jogo
 function gameLoop() {
-  updatePlayerMovement();    // atualiza movimento do jogador
-  updateEnemyMovements();    // atualiza IA dos inimigos
-  updateCamera();            // posiciona a câmera
+  updatePlayerMovement();    // movimenta jogador (se houver)
+  updateCamera();            // atualiza câmera com base no jogador
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Renderização do mundo
   drawGrid();
   drawWalls();
   drawEnemies();
   drawPlayer(player);
-  drawOthers(); // jogadores remotos
+  drawOthers();
 
   requestAnimationFrame(gameLoop);
 }
 
-// 🖱️ Evento de clique no canvas para mover
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const tx = Math.floor((mx + camera.x) / tileSize);
-  const ty = Math.floor((my + camera.y) / tileSize);
-  handleClickDestination(tx, ty);
-});
-
-// 🎮 Evento de teclado para movimentação
+// 🎮 Movimentação via teclado
 window.addEventListener('keydown', (e) => {
   const input = {
     ArrowUp: [0, -1],
@@ -57,5 +47,5 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// 🚀 Inicia o loop
+// 🚀 Inicia o loop gráfico
 requestAnimationFrame(gameLoop);
