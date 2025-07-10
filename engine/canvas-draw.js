@@ -1,4 +1,7 @@
-import { tileSize, camera, player, walls, enemies, destination } from './canvas-config.js';
+import {
+  tileSize, camera, player, walls,
+  enemies, destination
+} from './canvas-config.js';
 import { otherPlayers } from './multiplayer-client.js';
 
 const ctx = document.getElementById('game').getContext('2d');
