@@ -6,17 +6,31 @@ const gridSize = 50;
 canvas.width = gridSize * tileSize;
 canvas.height = gridSize * tileSize;
 
-// 🎮 Objetos do jogo
-const player = { x: 5, y: 5, color: '#E2E8F0' };
+// 🎮 Objetos do jogador
+const player = {
+  x: 5,
+  y: 5,
+  color: '#E2E8F0',
+  level: 1,
+  xp: 0,
+  attack: 5,
+  defense: 3,
+  speed: 150
+};
 
+let playerDestination = null;
+
+// ⛔ Paredes
 const walls = [
   { x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 },
   { x: 8, y: 6 }, { x: 8, y: 7 }, { x: 8, y: 8 }
 ];
 
+// 👹 Inimigos
 const enemies = [
   {
     id: 'enemy1',
+    name: 'Goblin',
     x: 15,
     y: 15,
     color: '#FBBF24',
@@ -27,11 +41,28 @@ const enemies = [
     target: null,
     patrolArea: [],
     lastMove: 0,
-    name: 'Goblin',
     level: 2,
+    xp: 15,
     attack: 4,
-    defense: 2,
-    xp: 15
+    defense: 2
+  },
+  {
+    id: 'enemy2',
+    name: 'Ogro',
+    x: 35,
+    y: 35,
+    color: '#EF4444',
+    speed: 400,
+    detectionRadius: 7,
+    patrolRadius: 5,
+    chasing: false,
+    target: null,
+    patrolArea: [],
+    lastMove: 0,
+    level: 5,
+    xp: 50,
+    attack: 9,
+    defense: 6
   }
 ];
 
@@ -51,6 +82,7 @@ function generatePatrolArea(enemy) {
 
 enemies.forEach(generatePatrolArea);
 
+// 🎨 Grid do mapa
 function drawGrid() {
   ctx.strokeStyle = '#1E293B';
   for (let i = 0; i <= gridSize; i++) {
@@ -66,6 +98,7 @@ function drawGrid() {
   }
 }
 
+// 📦 Render básicos
 function drawRect(x, y, color) {
   ctx.fillStyle = color;
   ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
@@ -78,34 +111,41 @@ function drawNameTag(txt, x, y) {
   ctx.fillText(txt, x * tileSize + tileSize / 2, y * tileSize - 6);
 }
 
-function drawStats(stats, x, y) {
+function drawStats(entity, x, y) {
   ctx.fillStyle = '#F1F5F9';
   ctx.font = '8px Segoe UI';
   ctx.textAlign = 'center';
-  const info = `LVL:${stats.level} XP:${stats.xp} ATK:${stats.attack} DEF:${stats.defense}`;
-  ctx.fillText(info, x * tileSize + tileSize / 2, y * tileSize + tileSize + 10);
+  const info = `LV:${entity.level} XP:${entity.xp} ATK:${entity.attack} DEF:${entity.defense} SPD:${Math.round(1000 / entity.speed)}`;
+  ctx.fillText(info, x * tileSize + tileSize / 2, y * tileSize + tileSize + 12);
 }
 
+function drawDestinationTile(tx, ty) {
+  ctx.strokeStyle = '#94A3B8';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(tx * tileSize + 1, ty * tileSize + 1, tileSize - 2, tileSize - 2);
+}
+
+// 💠 Áreas
 function drawPatrolArea(enemy) {
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+  ctx.fillStyle = 'rgba(59,130,246,0.15)';
   enemy.patrolArea.forEach(pos => {
     ctx.fillRect(pos.x * tileSize, pos.y * tileSize, tileSize, tileSize);
   });
 }
 
 function drawDetectionArea(enemy) {
-  ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
+  ctx.fillStyle = 'rgba(16,185,129,0.2)';
   ctx.beginPath();
   ctx.arc(
     enemy.x * tileSize + tileSize / 2,
     enemy.y * tileSize + tileSize / 2,
     enemy.detectionRadius * tileSize,
-    0,
-    Math.PI * 2
+    0, Math.PI * 2
   );
   ctx.fill();
 }
 
+// 🔁 Inimigos
 function updateEnemy(enemy) {
   const now = Date.now();
   if (now - enemy.lastMove < enemy.speed) return;
@@ -125,7 +165,7 @@ function updateEnemy(enemy) {
   const ty = enemy.target?.y ?? getRandomFrom(enemy.patrolArea)?.y ?? enemy.y;
 
   const blocked = walls.some(w => w.x === tx && w.y === ty) ||
-                  enemies.some(e => e !== enemy && e.x === tx && e.y === ty);
+    enemies.some(e => e !== enemy && e.x === tx && e.y === ty);
 
   if (
     tx >= 0 && tx < gridSize &&
@@ -143,6 +183,7 @@ function getRandomFrom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// 🎯 Render principal
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
@@ -151,7 +192,11 @@ function draw() {
 
   drawRect(player.x, player.y, player.color);
   drawNameTag('Você', player.x, player.y);
-  drawStats({ level: 1, xp: 0, attack: 5, defense: 3 }, player.x, player.y);
+  drawStats(player, player.x, player.y);
+
+  if (playerDestination) {
+    drawDestinationTile(playerDestination.x, playerDestination.y);
+  }
 
   enemies.forEach(enemy => {
     drawPatrolArea(enemy);
@@ -170,7 +215,7 @@ function loop() {
 
 loop();
 
-// 🎮 Teclado
+// ⌨️ Teclado
 document.addEventListener('keydown', e => {
   const dir = {
     ArrowUp: [0, -1],
@@ -186,9 +231,11 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left) / tileSize);
   const y = Math.floor((e.clientY - rect.top) / tileSize);
+  playerDestination = { x, y };
   movePlayerTo(x, y);
 });
 
+// 🧭 Movimento com colisão
 function tryMove(dx, dy) {
   const nx = player.x + dx;
   const ny = player.y + dy;
@@ -200,10 +247,10 @@ function tryMove(dx, dy) {
   }
 }
 
+// 🚶 Movimento por clique
 function movePlayerTo(tx, ty) {
   const dx = tx - player.x;
   const dy = ty - player.y;
-
   const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
   const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
 
@@ -214,6 +261,8 @@ function movePlayerTo(tx, ty) {
   }
 
   if (player.x !== tx || player.y !== ty) {
-    setTimeout(() => movePlayerTo(tx, ty), player.speed ?? 150);
+    setTimeout(() => movePlayerTo(tx, ty), player.speed);
+  } else {
+    playerDestination = null; // chegou ao destino, remove borda
   }
 }
