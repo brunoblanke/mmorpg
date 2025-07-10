@@ -16,10 +16,10 @@ export const walls = [
 ];
 
 export const player = {
-  x: 5,
-  y: 5,
-  posX: 5,
-  posY: 5,
+  x: 3,
+  y: 3,
+  posX: 3,
+  posY: 3,
   level: 1,
   speed: 1000,
   attack: 5,
@@ -70,5 +70,25 @@ export const enemies = [
     chasing: false,
     target: null,
     color: '#EF4444'
+  },
+  {
+    id: 'guardiao',
+    name: 'Guardião',
+    x: 25,
+    y: 25,
+    posX: 25,
+    posY: 25,
+    level: 20,
+    speed: 300,
+    attack: 18,
+    defense: 15,
+    xp: 200,
+    detectionRadius: 10,
+    patrolRadius: 4,
+    animationProgress: 1,
+    lastMove: 0,
+    chasing: false,
+    target: null,
+    color: '#7C3AED'
   }
 ];
