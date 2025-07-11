@@ -1,11 +1,9 @@
-/* Reset básico */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Fundo escuro para ambientação de RPG */
 body {
   background-color: #121212;
   color: #ffffff;
@@ -13,7 +11,6 @@ body {
   overflow: hidden;
 }
 
-/* Canvas ocupa toda a tela */
 canvas {
   display: block;
   width: 100vw;
