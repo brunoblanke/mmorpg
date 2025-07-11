@@ -1,5 +1,14 @@
-import { player, canvas, camera, tileSize, walls, enemies } from './canvas-config.js';
-import { socket } from './multiplayer-client.js';
+import { player, canvas, camera, tileSize, enemies, walls } from './canvas-config.js';
+import { findPath } from './pathfinding.js';
+
+export function tryMoveTo(tile) {
+  const path = findPath({ x: player.x, y: player.y }, tile);
+  if (path.length > 1) {
+    const final = path.at(-1);
+    player.x = final.x;
+    player.y = final.y;
+  }
+}
 
 export function tryMove(entity, dx, dy) {
   const nx = entity.x + dx;
@@ -15,12 +24,11 @@ export function tryMove(entity, dx, dy) {
 
   entity.x = nx;
   entity.y = ny;
-
-  if (entity === player) {
-    socket.emit('move', { x: player.x, y: player.y });
-  }
-
   return true;
+}
+
+export function handleClickDestination(tx, ty) {
+  tryMoveTo({ x: tx, y: ty });
 }
 
 export function handleDirectionalInput(dx, dy) {
@@ -28,7 +36,7 @@ export function handleDirectionalInput(dx, dy) {
 }
 
 export function updatePlayerMovement() {
-  // sem lógica interpolada, apenas placeholder
+  // Sem interpolação — movimento instantâneo
 }
 
 export function updateCamera() {
