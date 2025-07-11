@@ -1,0 +1,91 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  background: #121212;
+  font-family: sans-serif;
+  overflow: hidden;
+}
+
+#game-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#map-container {
+  position: absolute;
+  display: grid;
+  grid-template-columns: repeat(50, 30px);
+  grid-template-rows: repeat(50, 30px);
+}
+
+.tile {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #2b2b2b;
+  background: #3a3a3a;
+  box-sizing: border-box;
+}
+
+.wall { background: #555; }
+.spawn { box-shadow: inset 0 0 0 2px #007bff; }
+.destination { box-shadow: inset 0 0 0 2px #aaa; }
+
+.area-enemy1 {
+  background-color: rgba(0, 255, 0, 0.15);
+}
+.area-enemy2 {
+  background-color: rgba(255, 0, 0, 0.15);
+}
+
+.detect-enemy1 {
+  outline: 1px dashed lime;
+}
+.detect-enemy2 {
+  outline: 1px dashed crimson;
+}
+
+.player {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #d6d6d6;
+}
+
+.enemy { background: #aa3; }
+.other-player { background: #4caf50; }
+
+.name-tag {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hp-bar {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 4px;
+  background: #222;
+  border: 1px solid #333;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  background-color: #e74c3c;
+}
+
+.player-info, .enemy-info {
+  position: absolute;
