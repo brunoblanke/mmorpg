@@ -1,5 +1,3 @@
-// Simples caminho em linha reta — substituível por algoritmo real depois
-
 export function findPath(start, end) {
   const path = [];
   const dx = Math.sign(end.x - start.x);

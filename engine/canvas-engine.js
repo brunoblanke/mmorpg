@@ -1,55 +1,50 @@
-import { enemies, player } from './canvas-config.js';
-import { tryMove } from './canvas-movement.js';
+import { canvas, ctx, player, camera, tileSize } from './canvas-config.js';
+import {
+  updatePlayerMovement,
+  updateCamera,
+  handleClickDestination,
+  handleDirectionalInput
+} from './canvas-movement.js';
 
-function distance(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+import { drawGrid, drawWalls, drawPlayer, drawEnemies } from './canvas-draw.js';
+import { updateEnemyMovements } from './canvas-enemies.js';
+
+function gameLoop() {
+  updatePlayerMovement();
+  updateEnemyMovements();
+  updateCamera();
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  drawWalls();
+  drawEnemies();
+  drawPlayer(player);
+
+  requestAnimationFrame(gameLoop);
 }
 
-export function updateEnemyMovements() {
-  for (const e of enemies) {
-    if (e.cooldown > 0) {
-      e.cooldown--;
-      continue;
-    }
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
 
-    const dist = distance(e, player);
-    const isChasing = dist <= 5;
+  const tx = Math.floor((mx + camera.x) / tileSize);
+  const ty = Math.floor((my + camera.y) / tileSize);
 
-    if (isChasing) {
-      const dx = Math.sign(player.x - e.x);
-      const dy = Math.sign(player.y - e.y);
-      tryMove(e, dx, dy);
-    } else {
-      if (!e.patrolArea || e._justStoppedChasing) {
-        const px = e.x;
-        const py = e.y;
-        const range = 2;
+  handleClickDestination(tx, ty);
+});
 
-        e.patrolArea = {
-          x1: Math.max(0, px - range),
-          y1: Math.max(0, py - range),
-          x2: Math.min(49, px + range),
-          y2: Math.min(49, py + range)
-        };
+window.addEventListener('keydown', e => {
+  const input = {
+    ArrowUp: [0, -1], ArrowDown: [0, 1],
+    ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+    w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
+  };
 
-        e._justStoppedChasing = false;
-      }
-
-      const dx = Math.floor(Math.random() * 3) - 1;
-      const dy = Math.floor(Math.random() * 3) - 1;
-      const nx = e.x + dx;
-      const ny = e.y + dy;
-
-      if (
-        nx >= e.patrolArea.x1 && nx <= e.patrolArea.x2 &&
-        ny >= e.patrolArea.y1 && ny <= e.patrolArea.y2
-      ) {
-        tryMove(e, dx, dy);
-      }
-    }
-
-    e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
-    e._wasChasing = isChasing;
-    e.cooldown = 20 + Math.floor(Math.random() * 10);
+  if (input[e.key]) {
+    const [dx, dy] = input[e.key];
+    handleDirectionalInput(dx, dy);
   }
-}
+});
+
+requestAnimationFrame(gameLoop);

@@ -50,11 +50,6 @@ export function updateEnemyMovements() {
 
     e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
     e._wasChasing = isChasing;
-
     e.cooldown = 20 + Math.floor(Math.random() * 10);
   }
-}
-
-export function animateEnemies() {
-  // Movimento é instantâneo — função mantida por compatibilidade
 }
