@@ -36,7 +36,7 @@ export function handleDirectionalInput(dx, dy) {
 }
 
 export function updatePlayerMovement() {
-  // sem animações ainda — movimento instantâneo
+  // movimento instantâneo
 }
 
 export function updateCamera() {
