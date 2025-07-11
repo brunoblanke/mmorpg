@@ -1,4 +1,4 @@
-import { player, tileSize, camera, enemies, walls } from './canvas-config.js';
+import { canvas, player, camera, tileSize, enemies, walls } from './canvas-config.js';
 import { findPath } from './pathfinding.js';
 
 export function tryMoveTo(targetTile) {
