@@ -6,22 +6,16 @@ import {
   handleDirectionalInput
 } from './canvas-movement.js';
 
-import { drawGrid, drawWalls, drawPlayer, drawEnemies } from './canvas-draw.js';
+import {
+  drawGrid,
+  drawWalls,
+  drawPlayer,
+  drawEnemies
+} from './canvas-draw.js';
+
 import { updateEnemyMovements } from './canvas-enemies.js';
 
-function gameLoop() {
-  updatePlayerMovement();
-  updateEnemyMovements();
-  updateCamera();
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
-  drawWalls();
-  drawEnemies();
-  drawPlayer(player);
-
-  requestAnimationFrame(gameLoop);
-}
+let targetTile = null;
 
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
@@ -32,6 +26,7 @@ canvas.addEventListener('click', e => {
   const ty = Math.floor((my + camera.y) / tileSize);
 
   handleClickDestination(tx, ty);
+  targetTile = { x: tx, y: ty };
 });
 
 window.addEventListener('keydown', e => {
@@ -44,7 +39,37 @@ window.addEventListener('keydown', e => {
   if (input[e.key]) {
     const [dx, dy] = input[e.key];
     handleDirectionalInput(dx, dy);
+    targetTile = null;
   }
 });
+
+function drawTargetMarker() {
+  if (!targetTile) return;
+  ctx.strokeStyle = '#00ffcc';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(
+    targetTile.x * tileSize - camera.x + tileSize / 2,
+    targetTile.y * tileSize - camera.y + tileSize / 2,
+    tileSize / 3,
+    0, Math.PI * 2
+  );
+  ctx.stroke();
+}
+
+function gameLoop() {
+  updatePlayerMovement();
+  updateEnemyMovements();
+  updateCamera();
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  drawWalls();
+  drawEnemies();
+  drawPlayer(player);
+  drawTargetMarker();
+
+  requestAnimationFrame(gameLoop);
+}
 
 requestAnimationFrame(gameLoop);

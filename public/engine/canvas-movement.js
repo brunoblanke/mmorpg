@@ -1,12 +1,21 @@
 import { canvas, player, tileSize, camera, enemies, walls } from './canvas-config.js';
 import { findPath } from './pathfinding.js';
 
-export function tryMoveTo(targetTile) {
-  const path = findPath({ x: player.x, y: player.y }, targetTile);
-  if (path.length > 1) {
-    const final = path.at(-1);
-    player.x = final.x;
-    player.y = final.y;
+let movementQueue = [];
+
+export function handleClickDestination(tx, ty) {
+  movementQueue = findPath({ x: player.x, y: player.y }, { x: tx, y: ty });
+}
+
+export function updatePlayerMovement() {
+  if (movementQueue.length > 0) {
+    const next = movementQueue.shift();
+    const dx = next.x - player.x;
+    const dy = next.y - player.y;
+
+    if (!tryMove(player, dx, dy)) {
+      movementQueue = [];
+    }
   }
 }
 
@@ -27,16 +36,9 @@ export function tryMove(entity, dx, dy) {
   return true;
 }
 
-export function handleClickDestination(tx, ty) {
-  tryMoveTo({ x: tx, y: ty });
-}
-
 export function handleDirectionalInput(dx, dy) {
+  movementQueue = [];
   tryMove(player, dx, dy);
-}
-
-export function updatePlayerMovement() {
-  // movimento instantâneo
 }
 
 export function updateCamera() {
