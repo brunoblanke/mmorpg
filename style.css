@@ -5,7 +5,7 @@
   box-sizing: border-box;
 }
 
-/* Corpo escuro com visual imersivo */
+/* Fundo escuro para ambientação de RPG */
 body {
   background-color: #121212;
   color: #ffffff;
@@ -13,20 +13,9 @@ body {
   overflow: hidden;
 }
 
-/* Canvas ocupando toda a tela */
+/* Canvas ocupa toda a tela */
 canvas {
   display: block;
   width: 100vw;
   height: 100vh;
-}
-
-/* HUD opcional futuramente */
-.hud {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
 }
