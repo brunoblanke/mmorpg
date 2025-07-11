@@ -1,12 +1,32 @@
-body {
+/* Reset básico */
+* {
   margin: 0;
   padding: 0;
-  background-color: #0F172A;
+  box-sizing: border-box;
+}
+
+/* Corpo escuro com visual imersivo */
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', sans-serif;
   overflow: hidden;
 }
 
+/* Canvas ocupando toda a tela */
 canvas {
   display: block;
-  margin: auto;
-  background-color: #0F172A;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* HUD opcional futuramente */
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
 }

@@ -1,50 +1,60 @@
-import { enemies, player, walls } from './canvas-config.js';
-import { tryMove, updateEntityAnimation } from './canvas-movement.js';
+import { enemies, player } from './canvas-config.js';
+import { tryMove } from './canvas-movement.js';
 
-export function updateEnemies() {
-  enemies.forEach(enemy => {
-    const now = Date.now();
-    if (now - enemy.lastMove < enemy.speed) return;
+function distance(a, b) {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
 
-    enemy.lastMove = now;
-
-    const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
-
-    if (dist <= enemy.detectionRadius) {
-      enemy.chasing = true;
-      enemy.target = { x: player.x, y: player.y };
-    } else {
-      enemy.chasing = false;
-      enemy.target = null;
+export function updateEnemyMovements() {
+  for (const e of enemies) {
+    if (e.cooldown > 0) {
+      e.cooldown--;
+      continue;
     }
 
-    const tx = enemy.target?.x ?? enemy.x + Math.floor(Math.random() * 3 - 1);
-    const ty = enemy.target?.y ?? enemy.y + Math.floor(Math.random() * 3 - 1);
+    const dist = distance(e, player);
+    const isChasing = dist <= 5;
 
-    const blocked = walls.some(w => w.x === tx && w.y === ty) ||
-      enemies.some(e => e !== enemy && e.x === tx && e.y === ty) ||
-      (player.x === tx && player.y === ty);
+    if (isChasing) {
+      const dx = Math.sign(player.x - e.x);
+      const dy = Math.sign(player.y - e.y);
+      tryMove(e, dx, dy);
+    } else {
+      if (!e.patrolArea || e._justStoppedChasing) {
+        const px = e.x;
+        const py = e.y;
+        const range = 2;
 
-    if (
-      tx >= 0 && tx < 50 &&
-      ty >= 0 && ty < 50 &&
-      !blocked
-    ) {
-      const dx = tx - enemy.x;
-      const dy = ty - enemy.y;
+        e.patrolArea = {
+          x1: Math.max(0, px - range),
+          y1: Math.max(0, py - range),
+          x2: Math.min(49, px + range),
+          y2: Math.min(49, py + range)
+        };
 
-      const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
-      const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+        e._justStoppedChasing = false;
+      }
 
-      if (Math.abs(dx) > Math.abs(dy)) {
-        tryMove(enemy, stepX, 0) || tryMove(enemy, 0, stepY);
-      } else {
-        tryMove(enemy, 0, stepY) || tryMove(enemy, stepX, 0);
+      const dx = Math.floor(Math.random() * 3) - 1;
+      const dy = Math.floor(Math.random() * 3) - 1;
+      const nx = e.x + dx;
+      const ny = e.y + dy;
+
+      if (
+        nx >= e.patrolArea.x1 && nx <= e.patrolArea.x2 &&
+        ny >= e.patrolArea.y1 && ny <= e.patrolArea.y2
+      ) {
+        tryMove(e, dx, dy);
       }
     }
-  });
+
+    e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
+    e._wasChasing = isChasing;
+
+    e.cooldown = 20 + Math.floor(Math.random() * 10);
+  }
 }
 
 export function animateEnemies() {
-  enemies.forEach(updateEntityAnimation);
+  // Movimento é instantâneo — função mantida por compatibilidade
 }

@@ -1,66 +1,45 @@
-import { player, walls, enemies, lerp, tileSize, canvas, camera } from './canvas-config.js';
+import { player, tileSize, camera, enemies, walls } from './canvas-config.js';
+import { findPath } from './pathfinding.js';
 
-// 🔁 Verifica se é possível mover e atualiza posição lógica e animada
+export function tryMoveTo(targetTile) {
+  const path = findPath({ x: player.x, y: player.y }, targetTile);
+  if (path.length > 1) {
+    const final = path.at(-1);
+    player.x = final.x;
+    player.y = final.y;
+  }
+}
+
 export function tryMove(entity, dx, dy) {
   const nx = entity.x + dx;
   const ny = entity.y + dy;
 
   const blocked =
+    nx < 0 || ny < 0 || nx >= 50 || ny >= 50 ||
     walls.some(w => w.x === nx && w.y === ny) ||
     enemies.some(e => e.x === nx && e.y === ny) ||
     (entity !== player && player.x === nx && player.y === ny);
 
-  if (nx >= 0 && ny >= 0 && nx < 50 && ny < 50 && !blocked) {
-    entity.x = nx;
-    entity.y = ny;
-    entity.animationProgress = 0;
-    return true;
-  }
+  if (blocked) return false;
 
-  return false;
+  entity.x = nx;
+  entity.y = ny;
+  return true;
 }
 
-// 🚶 Atualiza movimento por destino passo a passo com contorno básico
+export function handleClickDestination(tx, ty) {
+  tryMoveTo({ x: tx, y: ty });
+}
+
+export function handleDirectionalInput(dx, dy) {
+  tryMove(player, dx, dy);
+}
+
 export function updatePlayerMovement() {
-  if (!player.destination) return;
-
-  const dx = player.destination.x - player.x;
-  const dy = player.destination.y - player.y;
-
-  const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
-  const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
-
-  let moved = false;
-
-  if (Math.abs(dx) > Math.abs(dy)) {
-    moved = tryMove(player, stepX, 0) || tryMove(player, 0, stepY);
-  } else {
-    moved = tryMove(player, 0, stepY) || tryMove(player, stepX, 0);
-  }
-
-  if (!moved && stepX !== 0 && stepY !== 0) {
-    tryMove(player, stepX, stepY);
-  }
-
-  if (player.x === player.destination.x && player.y === player.destination.y) {
-    player.destination = null;
-  }
+  // movimento instantâneo
 }
 
-// 🌀 Atualiza interpolação suave de movimento
-export function updateEntityAnimation(entity) {
-  if (entity.animationProgress < 1) {
-    entity.animationProgress += 0.1;
-    entity.posX = lerp(entity.posX, entity.x, entity.animationProgress);
-    entity.posY = lerp(entity.posY, entity.y, entity.animationProgress);
-  } else {
-    entity.posX = entity.x;
-    entity.posY = entity.y;
-  }
-}
-
-// 🎯 Atualiza câmera para manter player centralizado
 export function updateCamera() {
-  camera.x = player.posX * tileSize - canvas.width / 2 + tileSize / 2;
-  camera.y = player.posY * tileSize - canvas.height / 2 + tileSize / 2;
+  camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
+  camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
 }

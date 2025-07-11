@@ -1,78 +1,48 @@
-export const tileSize = 30;
+export const tileSize = 50;
 export const gridSize = 50;
-export const canvas = document.getElementById('game-canvas');
+
+export const canvas = document.getElementById('game');
 export const ctx = canvas.getContext('2d');
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// 🎮 Utilitário de interpolação
-export function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 
-// 🎮 Entidades iniciais
+export const camera = { x: 0, y: 0 };
+
 export const player = {
-  x: 5,
-  y: 5,
-  posX: 5,
-  posY: 5,
-  color: '#E2E8F0',
+  x: 5, y: 5,
   level: 1,
-  speed: 1000,
-  attack: 5,
-  defense: 3,
   xp: 0,
-  destination: null,
-  animationProgress: 1
+  health: 100,
+  maxHealth: 100,
+  atk: 5,
+  def: 3,
+  spd: 2
 };
-
-export const walls = [
-  { x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 },
-  { x: 8, y: 6 }, { x: 8, y: 7 }, { x: 8, y: 8 }
-];
 
 export const enemies = [
   {
-    id: 'goblin',
-    name: 'Goblin',
-    x: 15,
-    y: 15,
-    posX: 15,
-    posY: 15,
-    color: '#FBBF24',
-    level: 2,
-    speed: 800,
-    attack: 4,
-    defense: 2,
-    xp: 15,
-    detectionRadius: 4,
-    patrolRadius: 2,
-    lastMove: 0,
-    chasing: false,
-    target: null,
-    animationProgress: 1
-  },
-  {
-    id: 'ogro',
-    name: 'Ogro',
-    x: 35,
-    y: 35,
-    posX: 35,
-    posY: 35,
-    color: '#EF4444',
+    id: 'Ogro',
+    x: 10, y: 8,
+    health: 100,
+    maxHealth: 100,
     level: 5,
-    speed: 400,
-    attack: 9,
-    defense: 6,
     xp: 50,
-    detectionRadius: 7,
-    patrolRadius: 5,
-    lastMove: 0,
-    chasing: false,
-    target: null,
-    animationProgress: 1
+    atk: 9,
+    def: 6,
+    spd: 3,
+    patrolArea: { x1: 8, y1: 6, x2: 12, y2: 10 },
+    cooldown: 0
   }
 ];
 
-export const camera = { x: 0, y: 0 };
+export const walls = [
+  { x: 7, y: 5 }, { x: 8, y: 5 }, { x: 9, y: 5 },
+  { x: 10, y: 5 }, { x: 11, y: 5 }, { x: 12, y: 5 },
+  { x: 12, y: 6 }, { x: 12, y: 7 }, { x: 12, y: 8 }
+];

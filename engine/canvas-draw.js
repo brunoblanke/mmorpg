@@ -1,49 +1,62 @@
-import { ctx, tileSize, gridSize, canvas, camera, player, walls, enemies } from './canvas-config.js';
+import { ctx, tileSize, camera, gridSize, walls, player, enemies } from './canvas-config.js';
 
 export function drawGrid() {
-  ctx.strokeStyle = '#1E293B';
-  for (let i = 0; i <= gridSize; i++) {
-    const x = i * tileSize - camera.x;
+  ctx.strokeStyle = '#333';
+  for (let x = 0; x <= gridSize; x++) {
     ctx.beginPath();
-    ctx.moveTo(x, -camera.y);
-    ctx.lineTo(x, gridSize * tileSize - camera.y);
+    ctx.moveTo(x * tileSize - camera.x, 0);
+    ctx.lineTo(x * tileSize - camera.x, gridSize * tileSize);
     ctx.stroke();
-
-    const y = i * tileSize - camera.y;
+  }
+  for (let y = 0; y <= gridSize; y++) {
     ctx.beginPath();
-    ctx.moveTo(-camera.x, y);
-    ctx.lineTo(gridSize * tileSize - camera.x, y);
+    ctx.moveTo(0, y * tileSize - camera.y);
+    ctx.lineTo(gridSize * tileSize, y * tileSize - camera.y);
     ctx.stroke();
   }
 }
 
-export function drawRect(x, y, color) {
-  const screenX = x * tileSize - camera.x;
-  const screenY = y * tileSize - camera.y;
+export function drawTile(x, y, color) {
   ctx.fillStyle = color;
-  ctx.fillRect(screenX, screenY, tileSize, tileSize);
+  ctx.fillRect(x * tileSize - camera.x, y * tileSize - camera.y, tileSize, tileSize);
 }
 
-export function drawText(text, x, y, color = '#F8FAFC', offsetY = -6) {
-  const screenX = x * tileSize - camera.x;
-  const screenY = y * tileSize - camera.y;
-  ctx.fillStyle = color;
-  ctx.font = '10px Segoe UI';
-  ctx.textAlign = 'center';
-  ctx.fillText(text, screenX + tileSize / 2, screenY + offsetY);
+export function drawWalls() {
+  for (const w of walls) drawTile(w.x, w.y, '#444');
 }
 
-export function drawStats(entity) {
-  drawText(
-    `LV:${entity.level} XP:${entity.xp} ATK:${entity.attack} DEF:${entity.defense} SPD:${Math.round(1000 / entity.speed)}`,
-    entity.posX, entity.posY, '#CBD5E1', tileSize + 12
-  );
+export function drawPlayer(p) {
+  drawTile(p.x, p.y, '#00A0FF');
+  const px = p.x * tileSize - camera.x;
+  const py = p.y * tileSize - camera.y;
+  const ratio = p.health / p.maxHealth;
+
+  ctx.fillStyle = '#111';
+  ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
+  ctx.fillStyle = '#0f0';
+  ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px sans-serif';
+  ctx.fillText(`Player`, px + 4, py + tileSize - 24);
+  ctx.fillText(`LV:${p.level} XP:${p.xp}`, px + 4, py + tileSize - 14);
 }
 
-export function drawDestinationMarker(x, y) {
-  const screenX = x * tileSize - camera.x;
-  const screenY = y * tileSize - camera.y;
-  ctx.strokeStyle = '#94A3B8';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(screenX + 1, screenY + 1, tileSize - 2, tileSize - 2);
+export function drawEnemies() {
+  for (const e of enemies) {
+    drawTile(e.x, e.y, '#FF5050');
+    const px = e.x * tileSize - camera.x;
+    const py = e.y * tileSize - camera.y;
+    const ratio = e.health / e.maxHealth;
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(`${e.id}`, px + 4, py + tileSize - 24);
+    ctx.fillText(`LV:${e.level} XP:${e.xp}`, px + 4, py + tileSize - 14);
+  }
 }
