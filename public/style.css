@@ -1,0 +1,21 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Fundo escuro para ambientação de RPG */
+body {
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+/* Canvas ocupa toda a tela */
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
