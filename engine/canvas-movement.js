@@ -1,45 +1,83 @@
-import { player, canvas, camera, tileSize, enemies, walls } from './canvas-config.js';
-import { findPath } from './pathfinding.js';
+import { player, enemies, walls, lerp, canvas, camera, tileSize } from './canvas-config.js';
 
-export function tryMoveTo(tile) {
-  const path = findPath({ x: player.x, y: player.y }, tile);
-  if (path.length > 1) {
-    const final = path.at(-1);
-    player.x = final.x;
-    player.y = final.y;
-  }
-}
+let movementStartTime = 0;
+let isMoving = false;
+let currentStep = null;
 
-export function tryMove(entity, dx, dy) {
-  const nx = entity.x + dx;
-  const ny = entity.y + dy;
-
+export function tryStepTo(nx, ny) {
   const blocked =
-    nx < 0 || ny < 0 || nx >= 50 || ny >= 50 ||
     walls.some(w => w.x === nx && w.y === ny) ||
     enemies.some(e => e.x === nx && e.y === ny) ||
-    (entity !== player && player.x === nx && player.y === ny);
+    (player.x === nx && player.y === ny);
 
-  if (blocked) return false;
+  if (
+    nx >= 0 && ny >= 0 &&
+    nx < 50 && ny < 50 &&
+    !blocked
+  ) {
+    currentStep = { fromX: player.x, fromY: player.y, toX: nx, toY: ny };
+    movementStartTime = performance.now();
+    isMoving = true;
+    return true;
+  }
 
-  entity.x = nx;
-  entity.y = ny;
-  return true;
-}
-
-export function handleClickDestination(tx, ty) {
-  tryMoveTo({ x: tx, y: ty });
-}
-
-export function handleDirectionalInput(dx, dy) {
-  tryMove(player, dx, dy);
+  return false;
 }
 
 export function updatePlayerMovement() {
-  // Sem interpolação — movimento instantâneo
+  if (!isMoving || !currentStep) return;
+
+  const elapsed = performance.now() - movementStartTime;
+  const t = Math.min(elapsed / player.speed, 1);
+
+  player.posX = lerp(currentStep.fromX, currentStep.toX, t);
+  player.posY = lerp(currentStep.fromY, currentStep.toY, t);
+
+  if (t >= 1) {
+    player.x = currentStep.toX;
+    player.y = currentStep.toY;
+    player.posX = player.x;
+    player.posY = player.y;
+    currentStep = null;
+    isMoving = false;
+  }
+}
+
+export function handleDirectionalInput(dx, dy) {
+  player.destination = null; // cancela clique anterior
+
+  if (isMoving) return; // espera terminar movimento atual
+
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  tryStepTo(nx, ny);
+}
+
+export function handleClickDestination(tx, ty) {
+  player.destination = { x: tx, y: ty };
+  currentStep = null;
+  isMoving = false;
+
+  const dx = tx - player.x;
+  const dy = tx - player.y;
+
+  if (dx !== 0 || dy !== 0) {
+    const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+    const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (!tryStepTo(player.x + stepX, player.y)) {
+        tryStepTo(player.x, player.y + stepY);
+      }
+    } else {
+      if (!tryStepTo(player.x, player.y + stepY)) {
+        tryStepTo(player.x + stepX, player.y);
+      }
+    }
+  }
 }
 
 export function updateCamera() {
-  camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
-  camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
+  camera.x = player.posX * tileSize - canvas.width / 2 + tileSize / 2;
+  camera.y = player.posY * tileSize - canvas.height / 2 + tileSize / 2;
 }

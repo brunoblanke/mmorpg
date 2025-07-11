@@ -1,60 +1,51 @@
 import { enemies, player } from './canvas-config.js';
-import { tryMove } from './canvas-movement.js';
+import { tryMove, updateEntityAnimation } from './canvas-movement.js';
 
-function distance(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
+export function updateEnemies() {
+  enemies.forEach(enemy => {
+    const now = Date.now();
+    if (now - enemy.lastMove < enemy.speed) return;
+    enemy.lastMove = now;
 
-export function updateEnemyMovements() {
-  for (const e of enemies) {
-    if (e.cooldown > 0) {
-      e.cooldown--;
-      continue;
-    }
-
-    const dist = distance(e, player);
-    const isChasing = dist <= 5;
-
-    if (isChasing) {
-      const dx = Math.sign(player.x - e.x);
-      const dy = Math.sign(player.y - e.y);
-      tryMove(e, dx, dy);
+    // 🎯 Detecta o player
+    const dist = Math.abs(enemy.x - player.x) + Math.abs(enemy.y - player.y);
+    if (dist <= enemy.detectionRadius) {
+      enemy.chasing = true;
+      enemy.target = { x: player.x, y: player.y };
     } else {
-      if (!e.patrolArea || e._justStoppedChasing) {
-        const px = e.x;
-        const py = e.y;
-        const range = 2;
-
-        e.patrolArea = {
-          x1: Math.max(0, px - range),
-          y1: Math.max(0, py - range),
-          x2: Math.min(49, px + range),
-          y2: Math.min(49, py + range)
-        };
-
-        e._justStoppedChasing = false;
-      }
-
-      const dx = Math.floor(Math.random() * 3) - 1;
-      const dy = Math.floor(Math.random() * 3) - 1;
-      const nx = e.x + dx;
-      const ny = e.y + dy;
-
-      if (
-        nx >= e.patrolArea.x1 && nx <= e.patrolArea.x2 &&
-        ny >= e.patrolArea.y1 && ny <= e.patrolArea.y2
-      ) {
-        tryMove(e, dx, dy);
-      }
+      enemy.chasing = false;
+      // 👣 Patrulha simples aleatória
+      enemy.target = {
+        x: enemy.x + Math.floor(Math.random() * 3 - 1),
+        y: enemy.y + Math.floor(Math.random() * 3 - 1)
+      };
     }
 
-    e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
-    e._wasChasing = isChasing;
+    // 🧭 Calcula direção
+    const tx = enemy.target.x;
+    const ty = enemy.target.y;
+    const dx = tx - enemy.x;
+    const dy = ty - enemy.y;
 
-    e.cooldown = 20 + Math.floor(Math.random() * 10);
-  }
+    const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+    const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
+
+    let moved = false;
+
+    // 🛤️ Prioriza eixo com maior distância
+    if (Math.abs(dx) > Math.abs(dy)) {
+      moved = tryMove(enemy, stepX, 0) || tryMove(enemy, 0, stepY);
+    } else {
+      moved = tryMove(enemy, 0, stepY) || tryMove(enemy, stepX, 0);
+    }
+
+    // 🔄 Tenta diagonal caso esteja preso
+    if (!moved && stepX !== 0 && stepY !== 0) {
+      tryMove(enemy, stepX, stepY);
+    }
+  });
 }
 
 export function animateEnemies() {
-  // Movimento é instantâneo — função mantida por compatibilidade
+  enemies.forEach(updateEntityAnimation);
 }

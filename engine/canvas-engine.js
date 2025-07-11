@@ -1,48 +1,73 @@
-import { canvas, ctx, player, camera, tileSize } from './canvas-config.js';
+import { canvas, ctx, player, enemies, gridSize } from './canvas-config.js';
+import {
+  drawGrid,
+  drawWalls,
+  drawEnemyAreas,
+  drawRect,
+  drawText,
+  drawStats,
+  drawDestinationMarker
+} from './canvas-draw.js';
+
 import {
   updatePlayerMovement,
   updateCamera,
-  handleClickDestination,
-  handleDirectionalInput
+  handleDirectionalInput,
+  handleClickDestination
 } from './canvas-movement.js';
-import { drawGrid, drawWalls, drawPlayer, drawEnemies } from './canvas-draw.js';
-import { updateEnemyMovements } from './canvas-enemies.js';
+
+import {
+  updateEnemies,
+  animateEnemies
+} from './canvas-enemies.js';
 
 function gameLoop() {
   updatePlayerMovement();
-  updateEnemyMovements();
+  updateEnemies();
+
   updateCamera();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
+
+  drawGrid(gridSize);
   drawWalls();
-  drawEnemies();
-  drawPlayer(player);
+  drawEnemyAreas();
+
+  drawRect(player.posX, player.posY, player.color);
+  drawText('Você', player.posX, player.posY);
+  drawStats(player);
+
+  if (player.destination) {
+    drawDestinationMarker(player.destination.x, player.destination.y);
+  }
+
+  enemies.forEach(enemy => {
+    drawRect(enemy.posX, enemy.posY, enemy.color);
+    drawText(enemy.name, enemy.posX, enemy.posY);
+    drawStats(enemy);
+  });
 
   requestAnimationFrame(gameLoop);
 }
 
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const tx = Math.floor((mx + camera.x) / tileSize);
-  const ty = Math.floor((my + camera.y) / tileSize);
-  handleClickDestination(tx, ty);
-});
+gameLoop();
 
-window.addEventListener('keydown', e => {
-  const input = {
+document.addEventListener('keydown', e => {
+  const dir = {
     ArrowUp: [0, -1],
     ArrowDown: [0, 1],
     ArrowLeft: [-1, 0],
-    ArrowRight: [1, 0],
-    w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
-  };
-  if (input[e.key]) {
-    const [dx, dy] = input[e.key];
-    handleDirectionalInput(dx, dy);
+    ArrowRight: [1, 0]
+  }[e.key];
+
+  if (dir) {
+    handleDirectionalInput(dir[0], dir[1]);
   }
 });
 
-requestAnimationFrame(gameLoop);
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / 30 + player.x - canvas.width / 60);
+  const y = Math.floor((e.clientY - rect.top) / 30 + player.y - canvas.height / 60);
+  handleClickDestination(x, y);
+});
