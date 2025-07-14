@@ -5,6 +5,15 @@ function distance(a, b) {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
+function getSurroundTiles(target) {
+  return [
+    { x: target.x + 1, y: target.y },
+    { x: target.x - 1, y: target.y },
+    { x: target.x, y: target.y + 1 },
+    { x: target.x, y: target.y - 1 }
+  ];
+}
+
 export function updateEnemyMovements() {
   for (const e of enemies) {
     if (e.cooldown > 0) {
@@ -12,16 +21,31 @@ export function updateEnemyMovements() {
       continue;
     }
 
-    const playerIsInSafeZone = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
+    const isPlayerInSafe = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
     const distToPlayer = distance(e, player);
-    const isChasing = !playerIsInSafeZone && distToPlayer <= 5;
+    const isChasing = !isPlayerInSafe && distToPlayer <= 5;
 
     if (isChasing) {
-      const dx = Math.sign(player.x - e.x);
-      const dy = Math.sign(player.y - e.y);
-      tryMove(e, dx, dy);
+      const targetTiles = getSurroundTiles(player)
+        .filter(tile => distance(e, tile) < distToPlayer) // escolhe o mais próximo
+        .sort((a, b) => distance(e, a) - distance(e, b));
+
+      let moved = false;
+      for (const tile of targetTiles) {
+        const dx = tile.x - e.x;
+        const dy = tile.y - e.y;
+        if (tryMove(e, dx, dy)) {
+          moved = true;
+          break;
+        }
+      }
+
+      if (!moved) {
+        const dx = Math.sign(player.x - e.x);
+        const dy = Math.sign(player.y - e.y);
+        tryMove(e, dx, dy);
+      }
     } else {
-      // Gera nova área de patrulha se necessário
       if (!e.patrolArea || e._justStoppedChasing) {
         const px = e.x;
         const py = e.y;
@@ -37,7 +61,6 @@ export function updateEnemyMovements() {
         e._justStoppedChasing = false;
       }
 
-      // Movimento aleatório
       const dx = Math.floor(Math.random() * 3) - 1;
       const dy = Math.floor(Math.random() * 3) - 1;
       const nx = e.x + dx;
