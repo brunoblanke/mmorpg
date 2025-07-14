@@ -23,7 +23,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟩 Safe zone em verde translúcido
+  // 🟩 Safe Zone
   ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
   for (const tile of safeZone) {
     ctx.fillRect(
@@ -33,7 +33,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Patrulhas dos inimigos
+  // 🔴 Áreas de patrulha
   ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
   for (const enemy of enemies) {
     const area = enemy.patrolArea;
@@ -48,15 +48,21 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Área de detecção (tiles com alcance Manhattan ≤ 5)
-  ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
+  // 🟡 Áreas de detecção personalizadas
   for (const enemy of enemies) {
-    for (let y = enemy.y - 5; y <= enemy.y + 5; y++) {
-      for (let x = enemy.x - 5; x <= enemy.x + 5; x++) {
-        const withinGrid = x >= 0 && y >= 0 && x < gridSize && y < gridSize;
-        const inDetectionRange = Math.abs(x - enemy.x) + Math.abs(y - enemy.y) <= 5;
+    const type = enemy.id.toLowerCase();
+    let range = 5;
 
-        if (withinGrid && inDetectionRange) {
+    if (enemy.level === 1) range = 3;
+    if (type.includes('mago') || type.includes('elemental')) range = 10;
+
+    ctx.fillStyle = 'rgba(255, 255, 0, 0.08)';
+    for (let y = enemy.y - range; y <= enemy.y + range; y++) {
+      for (let x = enemy.x - range; x <= enemy.x + range; x++) {
+        if (
+          x >= 0 && y >= 0 && x < gridSize && y < gridSize &&
+          Math.abs(x - enemy.x) + Math.abs(y - enemy.y) <= range
+        ) {
           ctx.fillRect(
             x * tileSize - camera.x,
             y * tileSize - camera.y,
@@ -107,11 +113,11 @@ function drawEntityBase(entity, color) {
 }
 
 export function drawPlayer(player) {
-  drawEntityBase(player, '#0066ff');
+  drawEntityBase(player, '#0066ff'); // azul
 }
 
 export function drawEnemies() {
   for (const enemy of enemies) {
-    drawEntityBase(enemy, '#ff3333');
+    drawEntityBase(enemy, '#ff3333'); // vermelho
   }
 }
