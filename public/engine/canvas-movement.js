@@ -1,4 +1,4 @@
-import { player, walls, enemies } from './canvas-config.js';
+import { player, walls, enemies, camera, canvas } from './canvas-config.js';
 import { tileSize, gridSize } from './canvas-config.js';
 
 export const __movementQueue__ = [];
@@ -25,11 +25,11 @@ export function handleDirectionalInput(dx, dy) {
 }
 
 export function releaseInput() {
-  // reservado para futuro uso
+  // reservado pra futura animação ou movimento suave
 }
 
 export function updatePlayerMovement() {
-  // 🧿 Perseguindo inimigo-alvo
+  // 🔍 Perseguindo inimigo clicado
   if (player.targetEnemy && !player.targetEnemy.dead) {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
@@ -54,7 +54,7 @@ export function updatePlayerMovement() {
     return;
   }
 
-  // 🖱️ Indo até o destino clicado
+  // 👣 Caminhando até destino clicado
   if (player.target) {
     const dx = Math.sign(player.target.x - player.x);
     const dy = Math.sign(player.target.y - player.y);
@@ -72,20 +72,17 @@ export function updatePlayerMovement() {
   }
 }
 
-// 🛡️ Verifica obstáculos
+// 🛡️ Checagem de obstáculos
 function isBlocked(x, y) {
-  if (
+  return (
     x < 0 || x >= gridSize || y < 0 || y >= gridSize ||
     walls.some(w => w.x === x && w.y === y) ||
     enemies.some(e => e.x === x && e.y === y && !e.dead) ||
     (player.x === x && player.y === y)
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 
-// 👣 Movimento usado por inimigos
+// ⚙️ Exporta para uso por inimigos
 export function tryMove(entity, dx, dy) {
   const nx = entity.x + dx;
   const ny = entity.y + dy;
@@ -104,7 +101,13 @@ export function tryMove(entity, dx, dy) {
   return true;
 }
 
-// 🕒 Cooldown baseado em SPD
+// 🕒 Cooldown baseado na velocidade
 export function getEntityCooldown(entity) {
   return Math.max(10, 60 - entity.spd * 5);
+}
+
+// 🧭 Centraliza câmera no jogador
+export function updateCamera() {
+  camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
+  camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
 }
