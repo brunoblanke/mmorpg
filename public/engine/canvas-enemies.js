@@ -10,31 +10,42 @@ function getSurroundTiles(target) {
     { x: target.x + 1, y: target.y },
     { x: target.x - 1, y: target.y },
     { x: target.x, y: target.y + 1 },
-    { x: target.x, y: target.y - 1 }
+    { x: target.x, y: target.y - 1 },
+    { x: target.x + 1, y: target.y + 1 },
+    { x: target.x - 1, y: target.y - 1 },
+    { x: target.x + 1, y: target.y - 1 },
+    { x: target.x - 1, y: target.y + 1 }
   ];
 }
 
 export function updateEnemyMovements() {
+  const occupiedTiles = enemies.map(e => `${e.x},${e.y}`);
+  const playerIsInSafeZone = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
+
   for (const e of enemies) {
     if (e.cooldown > 0) {
       e.cooldown--;
       continue;
     }
 
-    const isPlayerInSafe = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
-    const distToPlayer = distance(e, player);
-    const isChasing = !isPlayerInSafe && distToPlayer <= 5;
+    const dist = distance(e, player);
+    const isChasing = !playerIsInSafeZone && dist <= 5;
 
     if (isChasing) {
-      const targetTiles = getSurroundTiles(player)
-        .filter(tile => distance(e, tile) < distToPlayer) // escolhe o mais próximo
+      // Tentativa de cercar
+      const surround = getSurroundTiles(player)
+        .filter(pos => {
+          const key = `${pos.x},${pos.y}`;
+          return !occupiedTiles.includes(key);
+        })
         .sort((a, b) => distance(e, a) - distance(e, b));
 
       let moved = false;
-      for (const tile of targetTiles) {
-        const dx = tile.x - e.x;
-        const dy = tile.y - e.y;
+      for (const pos of surround) {
+        const dx = pos.x - e.x;
+        const dy = pos.y - e.y;
         if (tryMove(e, dx, dy)) {
+          occupiedTiles.push(`${e.x},${e.y}`);
           moved = true;
           break;
         }
@@ -43,9 +54,12 @@ export function updateEnemyMovements() {
       if (!moved) {
         const dx = Math.sign(player.x - e.x);
         const dy = Math.sign(player.y - e.y);
-        tryMove(e, dx, dy);
+        if (tryMove(e, dx, dy)) {
+          occupiedTiles.push(`${e.x},${e.y}`);
+        }
       }
     } else {
+      // Patrulha aleatória
       if (!e.patrolArea || e._justStoppedChasing) {
         const px = e.x;
         const py = e.y;
