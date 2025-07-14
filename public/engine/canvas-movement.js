@@ -3,9 +3,16 @@ import { findPath } from './pathfinding.js';
 
 let movementQueue = [];
 let movementCooldown = 0;
+let keyInputQueue = [];
+
+export const __movementQueue__ = movementQueue;
+
+function getEntityCooldown(entity) {
+  const base = 12;
+  return Math.max(2, base - entity.spd);
+}
 
 export function handleClickDestination(tx, ty) {
-  // valida destino
   const blocked =
     walls.some(w => w.x === tx && w.y === ty) ||
     enemies.some(e => e.x === tx && e.y === ty);
@@ -16,6 +23,12 @@ export function handleClickDestination(tx, ty) {
   }
 
   movementQueue = findPath({ x: player.x, y: player.y }, { x: tx, y: ty });
+  keyInputQueue = []; // limpa entrada direta
+}
+
+export function handleDirectionalInput(dx, dy) {
+  keyInputQueue.push({ dx, dy });
+  movementQueue = []; // limpa clique
 }
 
 export function updatePlayerMovement() {
@@ -30,9 +43,17 @@ export function updatePlayerMovement() {
     const dy = next.y - player.y;
 
     if (tryMove(player, dx, dy)) {
-      movementCooldown = 8; // frames entre passos
+      movementCooldown = getEntityCooldown(player);
     } else {
-      movementQueue = []; // bloqueado
+      movementQueue = [];
+    }
+    return;
+  }
+
+  if (keyInputQueue.length > 0) {
+    const { dx, dy } = keyInputQueue.shift();
+    if (tryMove(player, dx, dy)) {
+      movementCooldown = getEntityCooldown(player);
     }
   }
 }
@@ -54,14 +75,7 @@ export function tryMove(entity, dx, dy) {
   return true;
 }
 
-export function handleDirectionalInput(dx, dy) {
-  movementQueue = [];
-  tryMove(player, dx, dy);
-}
-
 export function updateCamera() {
   camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
   camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
 }
-
-export const __movementQueue__ = movementQueue;

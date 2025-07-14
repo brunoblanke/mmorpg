@@ -5,6 +5,11 @@ function distance(a, b) {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 }
 
+function getCooldown(spd) {
+  const base = 14;
+  return Math.max(3, base - spd);
+}
+
 export function updateEnemyMovements() {
   for (const e of enemies) {
     if (e.cooldown > 0) {
@@ -50,6 +55,6 @@ export function updateEnemyMovements() {
 
     e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
     e._wasChasing = isChasing;
-    e.cooldown = 20 + Math.floor(Math.random() * 10);
+    e.cooldown = getCooldown(e.spd);
   }
 }
