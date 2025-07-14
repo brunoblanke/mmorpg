@@ -1,13 +1,8 @@
 import { enemies, player } from './canvas-config.js';
-import { tryMove } from './canvas-movement.js';
+import { tryMove, getEntityCooldown } from './canvas-movement.js';
 
 function distance(a, b) {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
-
-function getCooldown(spd) {
-  const base = 14;
-  return Math.max(3, base - spd);
 }
 
 export function updateEnemyMovements() {
@@ -55,6 +50,6 @@ export function updateEnemyMovements() {
 
     e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
     e._wasChasing = isChasing;
-    e.cooldown = getCooldown(e.spd);
+    e.cooldown = getEntityCooldown(e);
   }
 }
