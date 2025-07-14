@@ -3,13 +3,7 @@ import {
   player, enemies, camera, walls, safeZone
 } from './canvas-config.js';
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
+import { floatingTexts } from './combat-engine.js';
 
 export function drawGrid() {
   for (let y = 0; y < gridSize; y++) {
@@ -23,7 +17,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟩 Safe Zone
+  // Safe Zone
   ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
   for (const tile of safeZone) {
     ctx.fillRect(
@@ -31,46 +25,6 @@ export function drawGrid() {
       tile.y * tileSize - camera.y,
       tileSize, tileSize
     );
-  }
-
-  // 🔴 Áreas de patrulha
-  ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-  for (const enemy of enemies) {
-    const area = enemy.patrolArea;
-    for (let y = area.y1; y <= area.y2; y++) {
-      for (let x = area.x1; x <= area.x2; x++) {
-        ctx.fillRect(
-          x * tileSize - camera.x,
-          y * tileSize - camera.y,
-          tileSize, tileSize
-        );
-      }
-    }
-  }
-
-  // 🟡 Áreas de detecção personalizadas
-  for (const enemy of enemies) {
-    const type = enemy.id.toLowerCase();
-    let range = 5;
-
-    if (enemy.level === 1) range = 3;
-    if (type.includes('mago') || type.includes('elemental')) range = 10;
-
-    ctx.fillStyle = 'rgba(255, 255, 0, 0.08)';
-    for (let y = enemy.y - range; y <= enemy.y + range; y++) {
-      for (let x = enemy.x - range; x <= enemy.x + range; x++) {
-        if (
-          x >= 0 && y >= 0 && x < gridSize && y < gridSize &&
-          Math.abs(x - enemy.x) + Math.abs(y - enemy.y) <= range
-        ) {
-          ctx.fillRect(
-            x * tileSize - camera.x,
-            y * tileSize - camera.y,
-            tileSize, tileSize
-          );
-        }
-      }
-    }
   }
 }
 
@@ -93,7 +47,7 @@ function drawEntityBase(entity, color) {
     tileSize, tileSize
   );
 
-  // Nome acima
+  // Nome
   ctx.fillStyle = '#fff';
   ctx.font = '12px Segoe UI';
   ctx.textAlign = 'center';
@@ -103,12 +57,27 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // Atributos abaixo
-  const attrText = `LV:${entity.level} HP:${entity.health} ATK:${entity.atk} DEF:${entity.def} SPD:${entity.spd}`;
+  // Atributos + XP
   ctx.fillText(
-    attrText,
+    `LV:${entity.level} HP:${entity.health} XP:${entity.xp ?? 0}`,
     entity.x * tileSize - camera.x + tileSize / 2,
     entity.y * tileSize - camera.y + tileSize + 14
+  );
+
+  // Barra de vida
+  const w = tileSize - 6;
+  const ratio = entity.health / entity.maxHealth;
+  ctx.fillStyle = 'black';
+  ctx.fillRect(
+    entity.x * tileSize - camera.x + 3,
+    entity.y * tileSize - camera.y + tileSize - 6,
+    w, 4
+  );
+  ctx.fillStyle = '#00ff00';
+  ctx.fillRect(
+    entity.x * tileSize - camera.x + 3,
+    entity.y * tileSize - camera.y + tileSize - 6,
+    w * ratio, 4
   );
 }
 
@@ -119,5 +88,19 @@ export function drawPlayer(player) {
 export function drawEnemies() {
   for (const enemy of enemies) {
     drawEntityBase(enemy, '#ff3333'); // vermelho
+  }
+}
+
+export function drawFloatingTexts() {
+  ctx.fillStyle = 'yellow';
+  ctx.font = 'bold 14px Segoe UI';
+  ctx.textAlign = 'center';
+
+  for (const text of floatingTexts) {
+    ctx.fillText(
+      text.value,
+      text.x * tileSize - camera.x + tileSize / 2,
+      text.y * tileSize - camera.y + tileSize / 2
+    );
   }
 }

@@ -15,11 +15,16 @@ import {
   drawGrid,
   drawWalls,
   drawPlayer,
-  drawEnemies
+  drawEnemies,
+  drawFloatingTexts
 } from './canvas-draw.js';
 
 import { updateEnemyMovements } from './canvas-enemies.js';
-import { checkEnemyAttacks, checkPlayerAttack } from './combat-engine.js';
+import {
+  checkEnemyAttacks,
+  checkPlayerAttack,
+  updateFloatingTexts
+} from './combat-engine.js';
 
 let targetTile = null;
 let pressedKeys = {};
@@ -45,19 +50,19 @@ window.addEventListener('keydown', e => {
     w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
   };
 
-  const activeDirs = Object.entries(input)
+  const dirs = Object.entries(input)
     .filter(([key]) => pressedKeys[key])
     .map(([, dir]) => dir);
 
-  if (activeDirs.length === 1) {
-    const [dx, dy] = activeDirs[0];
+  if (dirs.length === 1) {
+    const [dx, dy] = dirs[0];
     handleDirectionalInput(dx, dy);
     targetTile = null;
   }
 
-  if (activeDirs.length === 2) {
-    const dx = activeDirs[0][0] + activeDirs[1][0];
-    const dy = activeDirs[0][1] + activeDirs[1][1];
+  if (dirs.length === 2) {
+    const dx = dirs[0][0] + dirs[1][0];
+    const dy = dirs[0][1] + dirs[1][1];
     handleDirectionalInput(dx, dy);
     targetTile = null;
   }
@@ -97,8 +102,9 @@ function drawPathShadow() {
 function gameLoop() {
   updatePlayerMovement();
   updateEnemyMovements();
-  checkEnemyAttacks();    // inimigos atacam o jogador
-  checkPlayerAttack();    // jogador ataca inimigos próximos
+  checkEnemyAttacks();
+  checkPlayerAttack();
+  updateFloatingTexts();
   updateCamera();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -108,6 +114,7 @@ function gameLoop() {
   drawEnemies();
   drawPlayer(player);
   drawTargetMarker();
+  drawFloatingTexts();
 
   requestAnimationFrame(gameLoop);
 }
