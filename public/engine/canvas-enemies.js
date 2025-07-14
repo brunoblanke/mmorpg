@@ -23,6 +23,7 @@ export function updateEnemyMovements() {
   const playerIsInSafe = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
 
   for (const e of enemies) {
+    if (e.dead) continue;                // 🧟‍♂️ Mortos não se movem
     if (e.cooldown > 0) {
       e.cooldown--;
       continue;
@@ -38,7 +39,7 @@ export function updateEnemyMovements() {
 
     let moved = false;
 
-    // MAGOS — mantêm distância ideal
+    // 🧙 Magos mantêm distância ideal
     if (strategy === 'ranged' && isChasing) {
       const idealDist = 6;
 
@@ -57,7 +58,7 @@ export function updateEnemyMovements() {
       }
     }
 
-    // INIMIGOS CORPO-A-CORPO — cerco lento
+    // ⚔️ Corpo-a-corpo em cerco
     else if (isChasing) {
       const surround = getSurroundTiles(player)
         .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
@@ -86,7 +87,7 @@ export function updateEnemyMovements() {
       }
     }
 
-    // PATRULHA — ativa quando não está perseguindo
+    // 🧍 Patrulha quando não está perseguindo
     if (!isChasing && !moved) {
       const moveChance = strategy === 'ranged' ? 0.15 : 0.5;
       if (Math.random() < moveChance) {
