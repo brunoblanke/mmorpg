@@ -26,6 +26,8 @@ import {
   updateFloatingTexts
 } from './combat-engine.js';
 
+import { enemies } from './canvas-config.js'; // necessário para verificar clique em inimigos
+
 let targetTile = null;
 let pressedKeys = {};
 
@@ -33,12 +35,20 @@ canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
-
   const tx = Math.floor((mx + camera.x) / tileSize);
   const ty = Math.floor((my + camera.y) / tileSize);
 
-  handleClickDestination(tx, ty);
-  targetTile = { x: tx, y: ty };
+  // Verifica se clicou sobre um inimigo
+  const clickedEnemy = enemies.find(en => en.x === tx && en.y === ty && !en.dead);
+
+  if (clickedEnemy) {
+    player.targetEnemy = clickedEnemy; // ativa perseguição
+    targetTile = null;
+  } else {
+    player.targetEnemy = null;
+    handleClickDestination(tx, ty);
+    targetTile = { x: tx, y: ty };
+  }
 });
 
 window.addEventListener('keydown', e => {
@@ -50,21 +60,16 @@ window.addEventListener('keydown', e => {
     w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
   };
 
-  const dirs = Object.entries(input)
+  const activeDirs = Object.entries(input)
     .filter(([key]) => pressedKeys[key])
     .map(([, dir]) => dir);
 
-  if (dirs.length === 1) {
-    const [dx, dy] = dirs[0];
+  if (activeDirs.length >= 1) {
+    const dx = activeDirs.reduce((sum, dir) => sum + dir[0], 0);
+    const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
     handleDirectionalInput(dx, dy);
     targetTile = null;
-  }
-
-  if (dirs.length === 2) {
-    const dx = dirs[0][0] + dirs[1][0];
-    const dy = dirs[0][1] + dirs[1][1];
-    handleDirectionalInput(dx, dy);
-    targetTile = null;
+    player.targetEnemy = null; // cancela perseguição ao mover manualmente
   }
 });
 
@@ -100,7 +105,7 @@ function drawPathShadow() {
 }
 
 function gameLoop() {
-  updatePlayerMovement();
+  updatePlayerMovement();       // agora inclui perseguição
   updateEnemyMovements();
   checkEnemyAttacks();
   checkPlayerAttack();

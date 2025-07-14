@@ -1,92 +1,88 @@
-import { canvas, player, tileSize, camera, enemies, walls } from './canvas-config.js';
-import { findPath } from './pathfinding.js';
+import { player, walls, enemies } from './canvas-config.js';
+import { tileSize, gridSize } from './canvas-config.js';
 
-let movementQueue = [];
-let movementCooldown = 0;
-let keyHeld = null;
-
-export const __movementQueue__ = movementQueue;
+export const __movementQueue__ = [];
 
 export function handleClickDestination(tx, ty) {
-  const blocked =
-    walls.some(w => w.x === tx && w.y === ty) ||
-    enemies.some(e => e.x === tx && e.y === ty);
-
-  if (blocked) {
-    movementQueue = [];
-    return;
-  }
-
-  movementQueue = findPath({ x: player.x, y: player.y }, { x: tx, y: ty });
-  keyHeld = null;
+  player.target = { x: tx, y: ty };
+  player.targetEnemy = null;
+  __movementQueue__.length = 0;
+  __movementQueue__.push({ x: tx, y: ty });
 }
 
 export function handleDirectionalInput(dx, dy) {
-  movementQueue = [];
-  keyHeld = { dx, dy };
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+
+  if (!isBlocked(nx, ny)) {
+    player.x = nx;
+    player.y = ny;
+  }
+
+  player.target = null;
+  __movementQueue__.length = 0;
 }
 
 export function releaseInput() {
-  keyHeld = null;
+  // usado para animação futura
 }
 
 export function updatePlayerMovement() {
-  if (movementCooldown > 0) {
-    movementCooldown--;
+  if (player.targetEnemy && !player.targetEnemy.dead) {
+    const tx = player.targetEnemy.x;
+    const ty = player.targetEnemy.y;
+
+    // Se já está colado, não move
+    if (Math.abs(tx - player.x) + Math.abs(ty - player.y) <= 1) {
+      __movementQueue__.length = 0;
+      return;
+    }
+
+    // Move em direção ao inimigo
+    const dx = Math.sign(tx - player.x);
+    const dy = Math.sign(ty - player.y);
+
+    const nx = player.x + dx;
+    const ny = player.y + dy;
+
+    if (!isBlocked(nx, ny)) {
+      player.x = nx;
+      player.y = ny;
+    }
+    __movementQueue__.length = 0;
+    __movementQueue__.push({ x: tx, y: ty });
     return;
   }
 
-  if (movementQueue.length > 0) {
-    const next = movementQueue.shift();
-    const dx = next.x - player.x;
-    const dy = next.y - player.y;
+  // Movimento para destino clicado
+  if (player.target) {
+    const dx = Math.sign(player.target.x - player.x);
+    const dy = Math.sign(player.target.y - player.y);
+    const nx = player.x + dx;
+    const ny = player.y + dy;
 
-    if (tryMove(player, dx, dy)) {
-      movementCooldown = getEntityCooldown(player);
-    } else {
-      movementQueue = [];
+    if (!isBlocked(nx, ny)) {
+      player.x = nx;
+      player.y = ny;
     }
 
-    if (movementQueue.length === 0) {
-      keyHeld = null;
-    }
-
-    return;
-  }
-
-  if (keyHeld) {
-    const { dx, dy } = keyHeld;
-    if (tryMove(player, dx, dy)) {
-      movementCooldown = getEntityCooldown(player);
-    } else {
-      keyHeld = null;
+    if (nx === player.target.x && ny === player.target.y) {
+      player.target = null;
     }
   }
 }
 
-export function tryMove(entity, dx, dy) {
-  const nx = entity.x + dx;
-  const ny = entity.y + dy;
-
-  const blocked =
-    nx < 0 || ny < 0 || nx >= 50 || ny >= 50 ||
-    walls.some(w => w.x === nx && w.y === ny) ||
-    enemies.some(e => e.x === nx && e.y === ny) ||
-    (entity !== player && player.x === nx && player.y === ny);
-
-  if (blocked) return false;
-
-  entity.x = nx;
-  entity.y = ny;
-  return true;
+function isBlocked(x, y) {
+  if (
+    x < 0 || x >= gridSize || y < 0 || y >= gridSize ||
+    walls.some(w => w.x === x && w.y === y) ||
+    enemies.some(e => e.x === x && e.y === y && !e.dead)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function getEntityCooldown(entity) {
-  const base = 12;
-  return Math.max(2, base - entity.spd);
-}
-
-export function updateCamera() {
-  camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
-  camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
+  return Math.max(10, 60 - entity.spd * 5);
 }
