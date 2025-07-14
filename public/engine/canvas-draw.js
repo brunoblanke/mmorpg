@@ -35,9 +35,10 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Áreas de patrulha
+  // 🔴 Área de patrulha
   ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
   for (const enemy of enemies) {
+    if (enemy.dead) continue;
     const area = enemy.patrolArea;
     if (!area) continue;
     for (let y = area.y1; y <= area.y2; y++) {
@@ -51,8 +52,9 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Áreas de detecção
+  // 🟡 Área de detecção
   for (const enemy of enemies) {
+    if (enemy.dead) continue;
     const type = enemy.id.toLowerCase();
     let range = 5;
     if (enemy.level === 1) range = 3;
@@ -105,7 +107,7 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // 📊 Atributos
+  // 📊 Atributos e XP
   ctx.fillText(
     `LV:${entity.level} HP:${entity.health} XP:${entity.xp ?? 0}`,
     entity.x * tileSize - camera.x + tileSize / 2,
