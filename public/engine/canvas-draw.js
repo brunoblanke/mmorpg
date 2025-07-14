@@ -23,7 +23,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟩 Safe Zone (verde translúcido)
+  // 🟩 Safe Zone
   ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
   for (const tile of safeZone) {
     ctx.fillRect(
@@ -33,7 +33,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Áreas de patrulha dos inimigos (vermelho suave)
+  // 🔴 Área de patrulha
   ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
   for (const enemy of enemies) {
     const area = enemy.patrolArea;
@@ -46,6 +46,18 @@ export function drawGrid() {
         );
       }
     }
+  }
+
+  // 🟡 Área de detecção (raio de visão do inimigo)
+  ctx.fillStyle = 'rgba(255, 255, 0, 0.15)';
+  for (const enemy of enemies) {
+    const radius = 5 * tileSize;
+    const centerX = enemy.x * tileSize - camera.x + tileSize / 2;
+    const centerY = enemy.y * tileSize - camera.y + tileSize / 2;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -61,7 +73,6 @@ export function drawWalls() {
 }
 
 function drawEntityBase(entity, color) {
-  // Caixa da entidade
   ctx.fillStyle = color;
   ctx.fillRect(
     entity.x * tileSize - camera.x,
@@ -69,7 +80,7 @@ function drawEntityBase(entity, color) {
     tileSize, tileSize
   );
 
-  // Nome acima da caixa
+  // Nome acima
   ctx.fillStyle = '#fff';
   ctx.font = '12px Segoe UI';
   ctx.textAlign = 'center';
@@ -79,7 +90,7 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // Atributos abaixo da caixa
+  // Atributos abaixo
   const attrText = `LV:${entity.level} HP:${entity.health} ATK:${entity.atk} DEF:${entity.def} SPD:${entity.spd}`;
   ctx.fillText(
     attrText,
