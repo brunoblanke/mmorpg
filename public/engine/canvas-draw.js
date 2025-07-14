@@ -25,31 +25,42 @@ export function drawWalls() {
   for (const w of walls) drawTile(w.x, w.y, '#444');
 }
 
-export function drawPlayer(p) {
-  drawTile(p.x, p.y, '#00A0FF');
-  const px = p.x * tileSize - camera.x;
-  const py = p.y * tileSize - camera.y;
-  const ratio = p.health / p.maxHealth;
+function drawCharacter(x, y, color, label, stats) {
+  const px = x * tileSize - camera.x;
+  const py = y * tileSize - camera.y;
+
+  // Corpo circular
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Borda
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
   // Barra de vida
+  const ratio = stats.health / stats.maxHealth;
   ctx.fillStyle = '#111';
   ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
   ctx.fillStyle = '#0f0';
   ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
 
-  // Informações do jogador
+  // Informações
   ctx.fillStyle = '#fff';
   ctx.font = '10px sans-serif';
-  ctx.fillText(`Player`, px + 4, py + tileSize - 34);
-  ctx.fillText(`LV:${p.level} XP:${p.xp}`, px + 4, py + tileSize - 24);
-  ctx.fillText(`ATK:${p.atk} DEF:${p.def} SPD:${p.spd}`, px + 4, py + tileSize - 14);
+  ctx.fillText(label, px + 4, py + tileSize - 34);
+  ctx.fillText(`LV:${stats.level} XP:${stats.xp}`, px + 4, py + tileSize - 24);
+  ctx.fillText(`ATK:${stats.atk} DEF:${stats.def} SPD:${stats.spd}`, px + 4, py + tileSize - 14);
+}
+
+export function drawPlayer(p) {
+  drawCharacter(p.x, p.y, '#00A0FF', 'Player', p);
 }
 
 export function drawEnemies() {
   for (const e of enemies) {
-    const px = e.x * tileSize - camera.x;
-    const py = e.y * tileSize - camera.y;
-
     // Área de patrulha
     if (e.patrolArea) {
       ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
@@ -73,21 +84,6 @@ export function drawEnemies() {
     );
     ctx.stroke();
 
-    // Inimigo
-    drawTile(e.x, e.y, '#FF5050');
-
-    // Barra de vida
-    const ratio = e.health / e.maxHealth;
-    ctx.fillStyle = '#111';
-    ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
-    ctx.fillStyle = '#0f0';
-    ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
-
-    // Informações
-    ctx.fillStyle = '#fff';
-    ctx.font = '10px sans-serif';
-    ctx.fillText(`${e.id}`, px + 4, py + tileSize - 34);
-    ctx.fillText(`LV:${e.level} XP:${e.xp}`, px + 4, py + tileSize - 24);
-    ctx.fillText(`ATK:${e.atk} DEF:${e.def} SPD:${e.spd}`, px + 4, py + tileSize - 14);
+    drawCharacter(e.x, e.y, '#FF5050', e.id, e);
   }
 }

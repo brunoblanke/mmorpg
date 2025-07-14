@@ -4,6 +4,7 @@ import { findPath } from './pathfinding.js';
 let movementQueue = [];
 let movementCooldown = 0;
 let keyHeld = null;
+let currentTarget = null;
 
 export const __movementQueue__ = movementQueue;
 
@@ -18,11 +19,13 @@ export function handleClickDestination(tx, ty) {
   }
 
   movementQueue = findPath({ x: player.x, y: player.y }, { x: tx, y: ty });
+  currentTarget = { x: tx, y: ty };
   keyHeld = null;
 }
 
 export function handleDirectionalInput(dx, dy) {
   movementQueue = [];
+  currentTarget = null;
   keyHeld = { dx, dy };
 }
 
@@ -43,8 +46,9 @@ export function updatePlayerMovement() {
 
     if (tryMove(player, dx, dy)) {
       movementCooldown = getEntityCooldown(player);
-    } else {
-      movementQueue = [];
+    } else if (currentTarget) {
+      // recalcula rota se o tile estiver bloqueado
+      movementQueue = findPath({ x: player.x, y: player.y }, currentTarget);
     }
 
     if (movementQueue.length === 0) {
