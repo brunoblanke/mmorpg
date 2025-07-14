@@ -35,7 +35,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Patrulha
+  // 🔴 Áreas de patrulha
   ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
   for (const enemy of enemies) {
     const area = enemy.patrolArea;
@@ -51,7 +51,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Detecção personalizada
+  // 🟡 Áreas de detecção
   for (const enemy of enemies) {
     const type = enemy.id.toLowerCase();
     let range = 5;
@@ -105,11 +105,17 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // 📊 Atributos + XP
+  // 📊 Atributos
   ctx.fillText(
     `LV:${entity.level} HP:${entity.health} XP:${entity.xp ?? 0}`,
     entity.x * tileSize - camera.x + tileSize / 2,
     entity.y * tileSize - camera.y + tileSize + 14
+  );
+
+  ctx.fillText(
+    `ATK:${entity.atk} DEF:${entity.def} SPD:${entity.spd}`,
+    entity.x * tileSize - camera.x + tileSize / 2,
+    entity.y * tileSize - camera.y + tileSize + 28
   );
 
   // 🟦 Barra de vida
@@ -135,7 +141,8 @@ export function drawPlayer(player) {
 
 export function drawEnemies() {
   for (const enemy of enemies) {
-    drawEntityBase(enemy, '#ff3333');
+    const color = enemy.dead ? '#888' : '#ff3333';
+    drawEntityBase(enemy, color);
   }
 }
 
