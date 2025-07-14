@@ -1,4 +1,7 @@
-import { canvas, ctx, player, camera, tileSize } from './canvas-config.js';
+import {
+  canvas, ctx, player, camera, tileSize
+} from './canvas-config.js';
+
 import {
   updatePlayerMovement,
   updateCamera,
@@ -16,6 +19,7 @@ import {
 import { updateEnemyMovements } from './canvas-enemies.js';
 
 let targetTile = null;
+let movementQueueRef = [];
 
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
@@ -40,11 +44,13 @@ window.addEventListener('keydown', e => {
     const [dx, dy] = input[e.key];
     handleDirectionalInput(dx, dy);
     targetTile = null;
+    movementQueueRef = []; // limpa visualização
   }
 });
 
 function drawTargetMarker() {
   if (!targetTile) return;
+
   ctx.strokeStyle = '#00ffcc';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -57,14 +63,35 @@ function drawTargetMarker() {
   ctx.stroke();
 }
 
+function drawPathShadow() {
+  ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
+  for (const step of movementQueueRef) {
+    ctx.fillRect(
+      step.x * tileSize - camera.x,
+      step.y * tileSize - camera.y,
+      tileSize, tileSize
+    );
+  }
+}
+
+function syncPathReference() {
+  // Captura a fila atual diretamente do módulo de movimento
+  // Copie o array externo `movementQueue` para visualização
+  import('./canvas-movement.js').then(mod => {
+    movementQueueRef = [...mod.__movementQueue__ || []];
+  });
+}
+
 function gameLoop() {
   updatePlayerMovement();
   updateEnemyMovements();
   updateCamera();
+  syncPathReference();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGrid();
   drawWalls();
+  drawPathShadow();
   drawEnemies();
   drawPlayer(player);
   drawTargetMarker();
