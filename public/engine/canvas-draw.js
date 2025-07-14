@@ -25,36 +25,24 @@ export function drawWalls() {
   for (const w of walls) drawTile(w.x, w.y, '#444');
 }
 
-function drawCharacter(x, y, color, label, stats) {
-  const px = x * tileSize - camera.x;
-  const py = y * tileSize - camera.y;
+export function drawPlayer(p) {
+  drawTile(p.x, p.y, '#00A0FF');
+  const px = p.x * tileSize - camera.x;
+  const py = p.y * tileSize - camera.y;
+  const ratio = p.health / p.maxHealth;
 
-  // Corpo quadrado
-  ctx.fillStyle = color;
-  ctx.fillRect(px, py, tileSize, tileSize);
-
-  // Borda
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(px, py, tileSize, tileSize);
-
-  // Barra de vida no topo
-  const ratio = stats.health / stats.maxHealth;
+  // Barra de vida
   ctx.fillStyle = '#111';
-  ctx.fillRect(px + 2, py - 6, tileSize - 4, 4);
+  ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
   ctx.fillStyle = '#0f0';
-  ctx.fillRect(px + 2, py - 6, (tileSize - 4) * ratio, 4);
+  ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
 
-  // HUD abaixo
+  // Informações do jogador
   ctx.fillStyle = '#fff';
   ctx.font = '10px sans-serif';
-  ctx.fillText(label, px + 4, py + tileSize + 12);
-  ctx.fillText(`LV:${stats.level} XP:${stats.xp}`, px + 4, py + tileSize + 22);
-  ctx.fillText(`ATK:${stats.atk} DEF:${stats.def} SPD:${stats.spd}`, px + 4, py + tileSize + 32);
-}
-
-export function drawPlayer(p) {
-  drawCharacter(p.x, p.y, '#00A0FF', 'Player', p);
+  ctx.fillText(`Player`, px + 4, py + tileSize - 34);
+  ctx.fillText(`LV:${p.level} XP:${p.xp}`, px + 4, py + tileSize - 24);
+  ctx.fillText(`ATK:${p.atk} DEF:${p.def} SPD:${p.spd}`, px + 4, py + tileSize - 14);
 }
 
 export function drawEnemies() {
@@ -85,6 +73,21 @@ export function drawEnemies() {
     );
     ctx.stroke();
 
-    drawCharacter(e.x, e.y, '#FF5050', e.id, e);
+    // Inimigo
+    drawTile(e.x, e.y, '#FF5050');
+
+    // Barra de vida
+    const ratio = e.health / e.maxHealth;
+    ctx.fillStyle = '#111';
+    ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
+
+    // Informações
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(`${e.id}`, px + 4, py + tileSize - 34);
+    ctx.fillText(`LV:${e.level} XP:${e.xp}`, px + 4, py + tileSize - 24);
+    ctx.fillText(`ATK:${e.atk} DEF:${e.def} SPD:${e.spd}`, px + 4, py + tileSize - 14);
   }
 }
