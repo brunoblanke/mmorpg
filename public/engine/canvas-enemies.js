@@ -20,7 +20,7 @@ function getSurroundTiles(target) {
 
 export function updateEnemyMovements() {
   const occupiedTiles = enemies.map(e => `${e.x},${e.y}`);
-  const playerIsInSafeZone = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
+  const playerIsInSafe = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
 
   for (const e of enemies) {
     if (e.cooldown > 0) {
@@ -29,45 +29,53 @@ export function updateEnemyMovements() {
     }
 
     const dist = distance(e, player);
-    const isChasing = !playerIsInSafeZone && dist <= 5;
+    const isChasing = !playerIsInSafe && dist <= 5;
+
+    // 🔍 Identifica tipo de inimigo
     const type = e.id.toLowerCase();
     let strategy = 'default';
-
     if (type.includes('troll') || type.includes('orc')) strategy = 'closeAggressive';
     if (type.includes('mago') || type.includes('elemental')) strategy = 'ranged';
 
-    const moveChance = isChasing
-  ? (strategy === 'ranged' ? 0.02 : 0.008)
-  : (strategy === 'ranged' ? 0.15 : 0.5);
+    // 🔁 Magos tentam manter distância-alvo
+    if (strategy === 'ranged' && isChasing) {
+      const ideal = 6;
 
-    if (Math.random() > moveChance) continue;
-
-    if (strategy === 'ranged' && !playerIsInSafeZone) {
-      const idealDist = 6;
-
-      if (dist < idealDist - 1) {
+      if (dist < ideal - 1) {
         const dx = Math.sign(e.x - player.x);
         const dy = Math.sign(e.y - player.y);
-        if (tryMove(e, dx, dy)) {
-          e.cooldown = getEntityCooldown(e);
-          continue;
+
+        // Apenas 10% de chance de recuar
+        if (Math.random() < 0.10) {
+          if (tryMove(e, dx, dy)) {
+            e.cooldown = getEntityCooldown(e);
+          }
         }
-      } else if (dist > idealDist + 1) {
-        const dx = Math.sign(player.x - e.x);
-        const dy = Math.sign(player.y - e.y);
-        if (tryMove(e, dx, dy)) {
-          e.cooldown = getEntityCooldown(e);
-          continue;
-        }
+        continue;
       }
 
-      const offsetX = Math.floor(Math.random() * 3) - 1;
-      const offsetY = Math.floor(Math.random() * 3) - 1;
-      const nx = e.x + offsetX;
-      const ny = e.y + offsetY;
+      if (dist > ideal + 1) {
+        const dx = Math.sign(player.x - e.x);
+        const dy = Math.sign(player.y - e.y);
 
-      if (!occupiedTiles.includes(`${nx},${ny}`)) {
-        if (tryMove(e, offsetX, offsetY)) {
+        // Apenas 10% de chance de avançar
+        if (Math.random() < 0.10) {
+          if (tryMove(e, dx, dy)) {
+            e.cooldown = getEntityCooldown(e);
+          }
+        }
+        continue;
+      }
+
+      // Pequena movimentação dentro da faixa ideal
+      const dx = Math.floor(Math.random() * 3) - 1;
+      const dy = Math.floor(Math.random() * 3) - 1;
+      const nx = e.x + dx;
+      const ny = e.y + dy;
+
+      const key = `${nx},${ny}`;
+      if (!occupiedTiles.includes(key) && Math.random() < 0.08) {
+        if (tryMove(e, dx, dy)) {
           e.cooldown = getEntityCooldown(e);
         }
       }
@@ -75,34 +83,39 @@ export function updateEnemyMovements() {
       continue;
     }
 
+    // ⚔️ Inimigos melee cercando
     if (isChasing) {
       const surround = getSurroundTiles(player)
         .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
         .sort((a, b) => distance(e, a) - distance(e, b));
 
+      const hasSpace = surround.length > 0;
       let moved = false;
 
-      for (const pos of surround) {
-        const dx = pos.x - e.x;
-        const dy = pos.y - e.y;
-        if (tryMove(e, dx, dy)) {
-          occupiedTiles.push(`${e.x},${e.y}`);
-          e.cooldown = getEntityCooldown(e);
-          moved = true;
-          break;
+      if (hasSpace && Math.random() < 0.04) {
+        for (const pos of surround) {
+          const dx = pos.x - e.x;
+          const dy = pos.y - e.y;
+          if (tryMove(e, dx, dy)) {
+            e.cooldown = getEntityCooldown(e);
+            occupiedTiles.push(`${e.x},${e.y}`);
+            moved = true;
+            break;
+          }
         }
       }
 
-      if (!moved) {
+      if (!moved && hasSpace && Math.random() < 0.02) {
         const dx = Math.sign(player.x - e.x);
         const dy = Math.sign(player.y - e.y);
         const nx = e.x + dx;
         const ny = e.y + dy;
+        const key = `${nx},${ny}`;
 
-        if (!occupiedTiles.includes(`${nx},${ny}`)) {
+        if (!occupiedTiles.includes(key)) {
           if (tryMove(e, dx, dy)) {
-            occupiedTiles.push(`${e.x},${e.y}`);
             e.cooldown = getEntityCooldown(e);
+            occupiedTiles.push(`${e.x},${e.y}`);
           }
         }
       }
@@ -110,7 +123,10 @@ export function updateEnemyMovements() {
       continue;
     }
 
-    // Patrulha aleatória
+    // 🧍 Patrulha aleatória (fora da perseguição)
+    const moveChance = strategy === 'ranged' ? 0.15 : 0.5;
+    if (Math.random() > moveChance) continue;
+
     if (!e.patrolArea || e._justStoppedChasing) {
       const px = e.x;
       const py = e.y;
@@ -130,14 +146,16 @@ export function updateEnemyMovements() {
     const dy = Math.floor(Math.random() * 3) - 1;
     const nx = e.x + dx;
     const ny = e.y + dy;
+    const key = `${nx},${ny}`;
 
     if (
       nx >= e.patrolArea.x1 && nx <= e.patrolArea.x2 &&
       ny >= e.patrolArea.y1 && ny <= e.patrolArea.y2 &&
-      !occupiedTiles.includes(`${nx},${ny}`)
+      !occupiedTiles.includes(key)
     ) {
-      tryMove(e, dx, dy);
-      e.cooldown = getEntityCooldown(e);
+      if (tryMove(e, dx, dy)) {
+        e.cooldown = getEntityCooldown(e);
+      }
     }
 
     e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
