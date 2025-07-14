@@ -29,37 +29,72 @@ export function updateEnemyMovements() {
     }
 
     const dist = distance(e, player);
+    const isAdjacent = dist === 1;
     const isChasing = !playerIsInSafeZone && dist <= 5;
 
+    const type = e.id.toLowerCase();
+
+    // Comportamento por tipo
+    let strategy = 'default';
+    if (type.includes('troll') || type.includes('orc')) strategy = 'closeAggressive';
+    if (type.includes('mago') || type.includes('elemental')) strategy = 'ranged';
+    if (type.includes('goblin') || type.includes('rato') || type.includes('besouro')) strategy = 'default';
+
     if (isChasing) {
-      // Tentativa de cercar
-      const surround = getSurroundTiles(player)
-        .filter(pos => {
-          const key = `${pos.x},${pos.y}`;
-          return !occupiedTiles.includes(key);
-        })
-        .sort((a, b) => distance(e, a) - distance(e, b));
-
-      let moved = false;
-      for (const pos of surround) {
-        const dx = pos.x - e.x;
-        const dy = pos.y - e.y;
-        if (tryMove(e, dx, dy)) {
-          occupiedTiles.push(`${e.x},${e.y}`);
-          moved = true;
-          break;
+      if (strategy === 'ranged') {
+        // Mantenha distância mínima de 2
+        if (dist < 2) {
+          const dx = Math.sign(e.x - player.x);
+          const dy = Math.sign(e.y - player.y);
+          tryMove(e, dx, dy);
+        } else if (dist > 3) {
+          const dx = Math.sign(player.x - e.x);
+          const dy = Math.sign(player.y - e.y);
+          tryMove(e, dx, dy);
         }
-      }
+      } else if (isAdjacent) {
+        // Quando encostado, fica parado ou se ajusta sutilmente
+        if (Math.random() < 0.15) {
+          const surround = getSurroundTiles(player)
+            .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
+            .sort((a, b) => distance(e, a) - distance(e, b));
 
-      if (!moved) {
-        const dx = Math.sign(player.x - e.x);
-        const dy = Math.sign(player.y - e.y);
-        if (tryMove(e, dx, dy)) {
-          occupiedTiles.push(`${e.x},${e.y}`);
+          for (const pos of surround) {
+            const dx = pos.x - e.x;
+            const dy = pos.y - e.y;
+            if (tryMove(e, dx, dy)) break;
+          }
+        }
+      } else {
+        // Cerco cooperativo padrão
+        const surround = getSurroundTiles(player)
+          .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
+          .sort((a, b) => distance(e, a) - distance(e, b));
+
+        let moved = false;
+        for (const pos of surround) {
+          const dx = pos.x - e.x;
+          const dy = pos.y - e.y;
+          if (tryMove(e, dx, dy)) {
+            occupiedTiles.push(`${e.x},${e.y}`);
+            moved = true;
+            break;
+          }
+        }
+
+        if (!moved) {
+          const dx = Math.sign(player.x - e.x);
+          const dy = Math.sign(player.y - e.y);
+          if (tryMove(e, dx, dy)) {
+            occupiedTiles.push(`${e.x},${e.y}`);
+          }
         }
       }
     } else {
-      // Patrulha aleatória
+      // Patrulha com frequência menor para magos
+      const moveChance = strategy === 'ranged' ? 0.15 : 0.5;
+      if (Math.random() > moveChance) continue;
+
       if (!e.patrolArea || e._justStoppedChasing) {
         const px = e.x;
         const py = e.y;
