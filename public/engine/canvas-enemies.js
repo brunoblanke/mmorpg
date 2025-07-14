@@ -1,4 +1,4 @@
-import { enemies, player } from './canvas-config.js';
+import { enemies, player, safeZone } from './canvas-config.js';
 import { tryMove, getEntityCooldown } from './canvas-movement.js';
 
 function distance(a, b) {
@@ -12,14 +12,16 @@ export function updateEnemyMovements() {
       continue;
     }
 
-    const dist = distance(e, player);
-    const isChasing = dist <= 5;
+    const playerIsInSafeZone = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
+    const distToPlayer = distance(e, player);
+    const isChasing = !playerIsInSafeZone && distToPlayer <= 5;
 
     if (isChasing) {
       const dx = Math.sign(player.x - e.x);
       const dy = Math.sign(player.y - e.y);
       tryMove(e, dx, dy);
     } else {
+      // Gera nova área de patrulha se necessário
       if (!e.patrolArea || e._justStoppedChasing) {
         const px = e.x;
         const py = e.y;
@@ -35,6 +37,7 @@ export function updateEnemyMovements() {
         e._justStoppedChasing = false;
       }
 
+      // Movimento aleatório
       const dx = Math.floor(Math.random() * 3) - 1;
       const dy = Math.floor(Math.random() * 3) - 1;
       const nx = e.x + dx;

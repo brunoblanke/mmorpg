@@ -23,7 +23,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟩 Safe Zone
+  // 🟩 Safe zone em verde translúcido
   ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
   for (const tile of safeZone) {
     ctx.fillRect(
@@ -33,7 +33,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Área de patrulha
+  // 🔴 Patrulhas dos inimigos
   ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
   for (const enemy of enemies) {
     const area = enemy.patrolArea;
@@ -48,16 +48,23 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Área de detecção (raio de visão do inimigo)
-  ctx.fillStyle = 'rgba(255, 255, 0, 0.15)';
+  // 🟡 Área de detecção (tiles com alcance Manhattan ≤ 5)
+  ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
   for (const enemy of enemies) {
-    const radius = 5 * tileSize;
-    const centerX = enemy.x * tileSize - camera.x + tileSize / 2;
-    const centerY = enemy.y * tileSize - camera.y + tileSize / 2;
+    for (let y = enemy.y - 5; y <= enemy.y + 5; y++) {
+      for (let x = enemy.x - 5; x <= enemy.x + 5; x++) {
+        const withinGrid = x >= 0 && y >= 0 && x < gridSize && y < gridSize;
+        const inDetectionRange = Math.abs(x - enemy.x) + Math.abs(y - enemy.y) <= 5;
 
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fill();
+        if (withinGrid && inDetectionRange) {
+          ctx.fillRect(
+            x * tileSize - camera.x,
+            y * tileSize - camera.y,
+            tileSize, tileSize
+          );
+        }
+      }
+    }
   }
 }
 
@@ -100,11 +107,11 @@ function drawEntityBase(entity, color) {
 }
 
 export function drawPlayer(player) {
-  drawEntityBase(player, '#0066ff'); // azul
+  drawEntityBase(player, '#0066ff');
 }
 
 export function drawEnemies() {
   for (const enemy of enemies) {
-    drawEntityBase(enemy, '#ff3333'); // vermelho
+    drawEntityBase(enemy, '#ff3333');
   }
 }
