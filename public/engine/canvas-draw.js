@@ -23,7 +23,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟩 Safe Zone
+  // 🟩 Safe Zone (verde translúcido)
   ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
   for (const tile of safeZone) {
     ctx.fillRect(
@@ -33,7 +33,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Áreas de patrulha de inimigos
+  // 🔴 Áreas de patrulha dos inimigos (vermelho suave)
   ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
   for (const enemy of enemies) {
     const area = enemy.patrolArea;
@@ -61,7 +61,7 @@ export function drawWalls() {
 }
 
 function drawEntityBase(entity, color) {
-  // 🧍 Caixa do personagem
+  // Caixa da entidade
   ctx.fillStyle = color;
   ctx.fillRect(
     entity.x * tileSize - camera.x,
@@ -79,7 +79,7 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // Atributos em linha abaixo da caixa
+  // Atributos abaixo da caixa
   const attrText = `LV:${entity.level} HP:${entity.health} ATK:${entity.atk} DEF:${entity.def} SPD:${entity.spd}`;
   ctx.fillText(
     attrText,

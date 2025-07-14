@@ -30,7 +30,6 @@ export const player = {
 };
 
 export const enemies = [
-  // Nível 1
   { id: 'Goblin1', x: 12, y: 10, level: 1, xp: 10, health: 40, maxHealth: 40, atk: 3, def: 2, spd: 2, patrolArea: { x1: 10, y1: 8, x2: 14, y2: 12 }, cooldown: 0 },
   { id: 'Goblin2', x: 14, y: 14, level: 1, xp: 10, health: 40, maxHealth: 40, atk: 3, def: 2, spd: 2, patrolArea: { x1: 12, y1: 12, x2: 16, y2: 16 }, cooldown: 0 },
   { id: 'Goblin3', x: 20, y: 6, level: 1, xp: 10, health: 40, maxHealth: 40, atk: 3, def: 2, spd: 2, patrolArea: { x1: 18, y1: 4, x2: 22, y2: 8 }, cooldown: 0 },
@@ -38,8 +37,6 @@ export const enemies = [
   { id: 'Goblin5', x: 5, y: 12, level: 1, xp: 10, health: 40, maxHealth: 40, atk: 3, def: 2, spd: 2, patrolArea: { x1: 3, y1: 10, x2: 7, y2: 14 }, cooldown: 0 },
   { id: 'Rato', x: 6, y: 22, level: 1, xp: 5, health: 30, maxHealth: 30, atk: 2, def: 1, spd: 3, patrolArea: { x1: 4, y1: 20, x2: 8, y2: 24 }, cooldown: 0 },
   { id: 'Besouro', x: 10, y: 30, level: 1, xp: 8, health: 35, maxHealth: 35, atk: 2, def: 3, spd: 1, patrolArea: { x1: 8, y1: 28, x2: 12, y2: 32 }, cooldown: 0 },
-
-  // Níveis mais altos
   { id: 'Troll', x: 25, y: 10, level: 7, xp: 80, health: 160, maxHealth: 160, atk: 12, def: 10, spd: 2, patrolArea: { x1: 23, y1: 8, x2: 27, y2: 12 }, cooldown: 0 },
   { id: 'OrcBruto', x: 35, y: 12, level: 6, xp: 70, health: 140, maxHealth: 140, atk: 11, def: 8, spd: 2, patrolArea: { x1: 33, y1: 10, x2: 37, y2: 14 }, cooldown: 0 },
   { id: 'EsqueletoMago', x: 42, y: 42, level: 8, xp: 100, health: 80, maxHealth: 80, atk: 15, def: 4, spd: 5, patrolArea: { x1: 40, y1: 40, x2: 44, y2: 44 }, cooldown: 0 },
@@ -48,19 +45,17 @@ export const enemies = [
 ];
 
 export const walls = [
-  // Labirinto em volta da área segura
-  { x: 2, y: 2 }, { x: 2, y: 3 }, { x: 2, y: 4 }, { x: 2, y: 5 },
-  { x: 5, y: 2 }, { x: 5, y: 3 }, { x: 5, y: 4 }, { x: 5, y: 5 },
-  { x: 3, y: 2 }, { x: 4, y: 2 }, { x: 3, y: 5 }, { x: 4, y: 5 },
+  // ✅ Removidas as paredes que bloqueavam a safeZone
+  { x: 2, y: 3 }, { x: 2, y: 4 },
+  { x: 5, y: 3 }, { x: 5, y: 4 },
+  { x: 3, y: 5 }, { x: 4, y: 5 },
 
-  // Estrutura complexa e zonas de bloqueio
+  // Restante do mapa
   ...Array.from({ length: 10 }, (_, i) => ({ x: 25 + i, y: 25 })),
   ...Array.from({ length: 5 }, (_, i) => ({ x: 30, y: 21 + i })),
   { x: 10, y: 9 }, { x: 11, y: 9 }, { x: 10, y: 11 }, { x: 11, y: 11 },
   { x: 20, y: 20 }, { x: 21, y: 20 }, { x: 22, y: 20 },
   { x: 40, y: 10 }, { x: 40, y: 11 }, { x: 41, y: 10 }, { x: 41, y: 11 },
-
-  // Obstáculos extras espalhados
   { x: 15, y: 5 }, { x: 15, y: 6 }, { x: 16, y: 5 },
   { x: 33, y: 33 }, { x: 34, y: 33 }, { x: 35, y: 33 },
   { x: 7, y: 28 }, { x: 8, y: 28 }, { x: 9, y: 28 },
