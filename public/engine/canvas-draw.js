@@ -33,7 +33,7 @@ function drawCharacter(x, y, color, label, stats) {
   ctx.fillStyle = color;
   ctx.fillRect(px, py, tileSize, tileSize);
 
-  // Borda branca
+  // Borda
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 1;
   ctx.strokeRect(px, py, tileSize, tileSize);
@@ -45,7 +45,7 @@ function drawCharacter(x, y, color, label, stats) {
   ctx.fillStyle = '#0f0';
   ctx.fillRect(px + 2, py - 6, (tileSize - 4) * ratio, 4);
 
-  // Informações abaixo
+  // HUD abaixo
   ctx.fillStyle = '#fff';
   ctx.font = '10px sans-serif';
   ctx.fillText(label, px + 4, py + tileSize + 12);
@@ -85,7 +85,6 @@ export function drawEnemies() {
     );
     ctx.stroke();
 
-    // Desenho do inimigo
     drawCharacter(e.x, e.y, '#FF5050', e.id, e);
   }
 }
