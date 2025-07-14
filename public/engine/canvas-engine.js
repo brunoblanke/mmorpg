@@ -21,6 +21,7 @@ import {
 import { updateEnemyMovements } from './canvas-enemies.js';
 
 let targetTile = null;
+let pressedKeys = {};
 
 canvas.addEventListener('click', e => {
   const rect = canvas.getBoundingClientRect();
@@ -35,20 +36,34 @@ canvas.addEventListener('click', e => {
 });
 
 window.addEventListener('keydown', e => {
+  pressedKeys[e.key] = true;
+
   const input = {
     ArrowUp: [0, -1], ArrowDown: [0, 1],
     ArrowLeft: [-1, 0], ArrowRight: [1, 0],
     w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
   };
 
-  if (input[e.key]) {
-    const [dx, dy] = input[e.key];
+  const activeDirs = Object.entries(input)
+    .filter(([key]) => pressedKeys[key])
+    .map(([, dir]) => dir);
+
+  if (activeDirs.length === 1) {
+    const [dx, dy] = activeDirs[0];
+    handleDirectionalInput(dx, dy);
+    targetTile = null;
+  }
+
+  if (activeDirs.length === 2) {
+    const dx = activeDirs[0][0] + activeDirs[1][0];
+    const dy = activeDirs[0][1] + activeDirs[1][1];
     handleDirectionalInput(dx, dy);
     targetTile = null;
   }
 });
 
-window.addEventListener('keyup', () => {
+window.addEventListener('keyup', e => {
+  delete pressedKeys[e.key];
   releaseInput();
 });
 

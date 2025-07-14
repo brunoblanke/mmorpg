@@ -42,6 +42,20 @@ export const enemies = [
   { id: 'EsqueletoMago', x: 42, y: 42, level: 8, xp: 100, health: 80, maxHealth: 80, atk: 15, def: 4, spd: 5, patrolArea: { x1: 40, y1: 40, x2: 44, y2: 44 }, cooldown: 0 },
   { id: 'DemônioSombrio', x: 18, y: 38, level: 9, xp: 120, health: 180, maxHealth: 180, atk: 16, def: 9, spd: 4, patrolArea: { x1: 16, y1: 36, x2: 20, y2: 40 }, cooldown: 0 },
   { id: 'ElementalFogo', x: 45, y: 5, level: 10, xp: 150, health: 200, maxHealth: 200, atk: 20, def: 6, spd: 3, patrolArea: { x1: 43, y1: 3, x2: 47, y2: 7 }, cooldown: 0 }
+  {
+  id: 'EsqueletoMago2', x: 42, y: 35, level: 7,
+  xp: 90, health: 70, maxHealth: 70,
+  atk: 14, def: 4, spd: 5,
+  patrolArea: { x1: 40, y1: 33, x2: 44, y2: 37 },
+  cooldown: 0
+},
+{
+  id: 'ElementalGelo', x: 45, y: 15, level: 9,
+  xp: 130, health: 180, maxHealth: 180,
+  atk: 19, def: 5, spd: 4,
+  patrolArea: { x1: 43, y1: 13, x2: 47, y2: 17 },
+  cooldown: 0
+}
 ];
 
 export const walls = [
