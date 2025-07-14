@@ -29,71 +29,58 @@ export function updateEnemyMovements() {
     }
 
     const dist = distance(e, player);
-    const isClose = dist <= 2;
-    const isTouching = dist === 1;
     const isChasing = !playerIsInSafe && dist <= 5;
-
-    // Identifica tipo
     const type = e.id.toLowerCase();
     let strategy = 'default';
+
     if (type.includes('troll') || type.includes('orc')) strategy = 'closeAggressive';
     if (type.includes('mago') || type.includes('elemental')) strategy = 'ranged';
 
-    if (isChasing) {
-      if (strategy === 'ranged') {
-        // 🧙 Mago fica entre distância 2 e 4
-        if (dist < 2 && Math.random() < 0.5) {
+    // 🧙 Estratégia de magos: manter distância-alvo
+    if (strategy === 'ranged') {
+      const idealDist = 6;
+
+      if (!playerIsInSafe) {
+        if (dist < idealDist - 1 && Math.random() < 0.7) {
+          // Recuar
           const dx = Math.sign(e.x - player.x);
           const dy = Math.sign(e.y - player.y);
           tryMove(e, dx, dy);
-        } else if (dist > 4) {
+        } else if (dist > idealDist + 1 && Math.random() < 0.7) {
+          // Aproximar
           const dx = Math.sign(player.x - e.x);
           const dy = Math.sign(player.y - e.y);
           tryMove(e, dx, dy);
         }
-      } else if (isClose) {
-        // 🤏 Inimigo está muito perto: deve desacelerar
-        const stayChance = strategy === 'closeAggressive' ? 0.8 : 0.93;
-        if (Math.random() > stayChance) {
-          const surround = getSurroundTiles(player)
-            .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
-            .sort((a, b) => distance(e, a) - distance(e, b));
+        // Se estiver dentro da faixa ideal, movimenta pouco ou nada
+        continue;
+      }
+    }
 
-          for (const pos of surround) {
-            const dx = pos.x - e.x;
-            const dy = pos.y - e.y;
-            if (tryMove(e, dx, dy)) break;
-          }
-        }
-        // Se não mover, fica parado
-      } else {
-        // 🧠 Cerco em andamento: distribuição ao redor
-        const surround = getSurroundTiles(player)
-          .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
-          .sort((a, b) => distance(e, a) - distance(e, b));
+    // 🧱 Outros inimigos
+    if (isChasing) {
+      const surround = getSurroundTiles(player)
+        .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
+        .sort((a, b) => distance(e, a) - distance(e, b));
 
-        let moved = false;
-        for (const pos of surround) {
-          const dx = pos.x - e.x;
-          const dy = pos.y - e.y;
-          if (tryMove(e, dx, dy)) {
-            occupiedTiles.push(`${e.x},${e.y}`);
-            moved = true;
-            break;
-          }
-        }
-
-        // Se não conseguiu cercar, aproxima normalmente
-        if (!moved) {
-          const dx = Math.sign(player.x - e.x);
-          const dy = Math.sign(player.y - e.y);
-          if (tryMove(e, dx, dy)) {
-            occupiedTiles.push(`${e.x},${e.y}`);
-          }
+      let moved = false;
+      for (const pos of surround) {
+        const dx = pos.x - e.x;
+        const dy = pos.y - e.y;
+        if (tryMove(e, dx, dy)) {
+          occupiedTiles.push(`${e.x},${e.y}`);
+          moved = true;
+          break;
         }
       }
+
+      if (!moved && Math.random() < 0.3) {
+        const dx = Math.sign(player.x - e.x);
+        const dy = Math.sign(player.y - e.y);
+        tryMove(e, dx, dy);
+      }
     } else {
-      // 🔄 Patrulha com chance reduzida para magos
+      // Patrulha controlada
       const moveChance = strategy === 'ranged' ? 0.15 : 0.5;
       if (Math.random() > moveChance) continue;
 
