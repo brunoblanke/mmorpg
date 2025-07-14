@@ -29,30 +29,28 @@ function drawCharacter(x, y, color, label, stats) {
   const px = x * tileSize - camera.x;
   const py = y * tileSize - camera.y;
 
-  // Corpo circular
+  // Corpo quadrado
   ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize / 2.5, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillRect(px, py, tileSize, tileSize);
 
-  // Borda
+  // Borda branca
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 1;
-  ctx.stroke();
+  ctx.strokeRect(px, py, tileSize, tileSize);
 
-  // Barra de vida
+  // Barra de vida no topo
   const ratio = stats.health / stats.maxHealth;
   ctx.fillStyle = '#111';
-  ctx.fillRect(px + 2, py + 2, tileSize - 4, 4);
+  ctx.fillRect(px + 2, py - 6, tileSize - 4, 4);
   ctx.fillStyle = '#0f0';
-  ctx.fillRect(px + 2, py + 2, (tileSize - 4) * ratio, 4);
+  ctx.fillRect(px + 2, py - 6, (tileSize - 4) * ratio, 4);
 
-  // Informações
+  // Informações abaixo
   ctx.fillStyle = '#fff';
   ctx.font = '10px sans-serif';
-  ctx.fillText(label, px + 4, py + tileSize - 34);
-  ctx.fillText(`LV:${stats.level} XP:${stats.xp}`, px + 4, py + tileSize - 24);
-  ctx.fillText(`ATK:${stats.atk} DEF:${stats.def} SPD:${stats.spd}`, px + 4, py + tileSize - 14);
+  ctx.fillText(label, px + 4, py + tileSize + 12);
+  ctx.fillText(`LV:${stats.level} XP:${stats.xp}`, px + 4, py + tileSize + 22);
+  ctx.fillText(`ATK:${stats.atk} DEF:${stats.def} SPD:${stats.spd}`, px + 4, py + tileSize + 32);
 }
 
 export function drawPlayer(p) {
@@ -61,6 +59,9 @@ export function drawPlayer(p) {
 
 export function drawEnemies() {
   for (const e of enemies) {
+    const px = e.x * tileSize - camera.x;
+    const py = e.y * tileSize - camera.y;
+
     // Área de patrulha
     if (e.patrolArea) {
       ctx.fillStyle = 'rgba(255, 255, 0, 0.2)';
@@ -84,6 +85,7 @@ export function drawEnemies() {
     );
     ctx.stroke();
 
+    // Desenho do inimigo
     drawCharacter(e.x, e.y, '#FF5050', e.id, e);
   }
 }
