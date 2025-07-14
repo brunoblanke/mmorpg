@@ -37,8 +37,8 @@ export function updateEnemyMovements() {
     if (type.includes('mago') || type.includes('elemental')) strategy = 'ranged';
 
     const moveChance = isChasing
-      ? (strategy === 'ranged' ? 0.10 : 0.04)
-      : (strategy === 'ranged' ? 0.15 : 0.5);
+  ? (strategy === 'ranged' ? 0.02 : 0.008)
+  : (strategy === 'ranged' ? 0.15 : 0.5);
 
     if (Math.random() > moveChance) continue;
 
