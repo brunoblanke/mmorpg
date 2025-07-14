@@ -26,7 +26,7 @@ import {
   updateFloatingTexts
 } from './combat-engine.js';
 
-import { enemies } from './canvas-config.js'; // necessário para verificar clique em inimigos
+import { enemies } from './canvas-config.js';
 
 let targetTile = null;
 let pressedKeys = {};
@@ -38,11 +38,11 @@ canvas.addEventListener('click', e => {
   const tx = Math.floor((mx + camera.x) / tileSize);
   const ty = Math.floor((my + camera.y) / tileSize);
 
-  // Verifica se clicou sobre um inimigo
   const clickedEnemy = enemies.find(en => en.x === tx && en.y === ty && !en.dead);
 
   if (clickedEnemy) {
-    player.targetEnemy = clickedEnemy; // ativa perseguição
+    player.targetEnemy = clickedEnemy;
+    player.target = null;
     targetTile = null;
   } else {
     player.targetEnemy = null;
@@ -69,7 +69,7 @@ window.addEventListener('keydown', e => {
     const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
     handleDirectionalInput(dx, dy);
     targetTile = null;
-    player.targetEnemy = null; // cancela perseguição ao mover manualmente
+    player.targetEnemy = null;
   }
 });
 
@@ -105,7 +105,7 @@ function drawPathShadow() {
 }
 
 function gameLoop() {
-  updatePlayerMovement();       // agora inclui perseguição
+  updatePlayerMovement();
   updateEnemyMovements();
   checkEnemyAttacks();
   checkPlayerAttack();

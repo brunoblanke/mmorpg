@@ -20,11 +20,12 @@ export function handleDirectionalInput(dx, dy) {
   }
 
   player.target = null;
+  player.targetEnemy = null;
   __movementQueue__.length = 0;
 }
 
 export function releaseInput() {
-  // usado para animação futura
+  // futuro: animações ou efeitos
 }
 
 export function updatePlayerMovement() {
@@ -32,13 +33,11 @@ export function updatePlayerMovement() {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
 
-    // Se já está colado, não move
     if (Math.abs(tx - player.x) + Math.abs(ty - player.y) <= 1) {
       __movementQueue__.length = 0;
       return;
     }
 
-    // Move em direção ao inimigo
     const dx = Math.sign(tx - player.x);
     const dy = Math.sign(ty - player.y);
 
@@ -49,12 +48,12 @@ export function updatePlayerMovement() {
       player.x = nx;
       player.y = ny;
     }
+
     __movementQueue__.length = 0;
     __movementQueue__.push({ x: tx, y: ty });
     return;
   }
 
-  // Movimento para destino clicado
   if (player.target) {
     const dx = Math.sign(player.target.x - player.x);
     const dy = Math.sign(player.target.y - player.y);
