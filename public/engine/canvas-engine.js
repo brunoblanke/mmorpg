@@ -19,6 +19,7 @@ import {
 } from './canvas-draw.js';
 
 import { updateEnemyMovements } from './canvas-enemies.js';
+import { checkEnemyAttacks, checkPlayerAttack } from './combat-engine.js';
 
 let targetTile = null;
 let pressedKeys = {};
@@ -96,6 +97,8 @@ function drawPathShadow() {
 function gameLoop() {
   updatePlayerMovement();
   updateEnemyMovements();
+  checkEnemyAttacks();    // inimigos atacam o jogador
+  checkPlayerAttack();    // jogador ataca inimigos próximos
   updateCamera();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
