@@ -18,7 +18,7 @@ export function applyAttack(attacker, target) {
     duration: 30
   });
 
-  // 🧍 Inimigo derrotado
+  // ⚰️ Inimigo derrotado
   if (target !== player && target.health <= 0) {
     target.health = 0;
     target.dead = true;
@@ -27,21 +27,17 @@ export function applyAttack(attacker, target) {
     }
   }
 
-  // 🧍 Jogador derrotado
+  // 💀 Jogador derrotado
   if (target === player && player.health <= 0) {
     player.health = 0;
-
-    // XP -10%
     player.xp = Math.floor(player.xp * 0.9);
-
-    // Reposiciona na safe zone
     const spawn = safeZone[0];
     player.x = spawn.x;
     player.y = spawn.y;
     player.health = player.maxHealth;
 
     floatingTexts.push({
-      value: `revive -10% XP`,
+      value: `Revive -10% XP`,
       x: player.x,
       y: player.y,
       duration: 60
@@ -53,21 +49,37 @@ export function checkEnemyAttacks() {
   for (const enemy of enemies) {
     if (enemy.dead) continue;
 
+    const type = enemy.id.toLowerCase();
+    const isRanged = type.includes('mago') || type.includes('elemental');
+
     const dx = Math.abs(enemy.x - player.x);
     const dy = Math.abs(enemy.y - player.y);
+    const dist = dx + dy;
+    const key = enemy.id;
+    const cd = enemyAttackCooldowns.get(key) || 0;
 
-    if (dx <= 1 && dy <= 1) {
-      const cd = enemyAttackCooldowns.get(enemy.id) || 0;
-      if (cd <= 0 && Math.random() < 0.3) {
-        applyAttack(enemy, player);
-        enemyAttackCooldowns.set(enemy.id, 60); // inimigos atacam a cada 60 ticks
-      }
+    if (cd > 0) {
+      enemyAttackCooldowns.set(key, cd - 1);
+      continue;
     }
-  }
 
-  // Atualiza cooldowns
-  for (const [id, cd] of enemyAttackCooldowns.entries()) {
-    enemyAttackCooldowns.set(id, Math.max(0, cd - 1));
+    // 👊 Corpo-a-corpo
+    if (!isRanged && dx <= 1 && dy <= 1 && Math.random() < 0.3) {
+      applyAttack(enemy, player);
+      enemyAttackCooldowns.set(key, 60);
+    }
+
+    // 🔮 Magia à distância
+    if (isRanged && dist <= 10 && Math.random() < 0.15) {
+      applyAttack(enemy, player);
+      enemyAttackCooldowns.set(key, 60);
+      floatingTexts.push({
+        value: `⚡ MAGIA`,
+        x: enemy.x,
+        y: enemy.y,
+        duration: 20
+      });
+    }
   }
 }
 
@@ -85,7 +97,7 @@ export function checkPlayerAttack() {
 
     if (dx <= 1 && dy <= 1 && enemy.health > 0) {
       applyAttack(player, enemy);
-      playerAttackCooldown = 40; // player ataca a cada 40 ticks
+      playerAttackCooldown = 40;
       break;
     }
   }
