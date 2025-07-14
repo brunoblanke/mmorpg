@@ -16,8 +16,8 @@ export function findPath(start, end) {
 
   const key = (p) => `${p.x},${p.y}`;
   const neighbors = [
-    [0, -1], [0, 1],
-    [-1, 0], [1, 0]
+    [0, -1], [0, 1], [-1, 0], [1, 0],
+    [-1, -1], [1, -1], [-1, 1], [1, 1] // 🧭 Diagonais habilitadas
   ];
 
   gScore[key(start)] = 0;
@@ -51,11 +51,12 @@ export function findPath(start, end) {
     }
   }
 
-  return []; // sem caminho
+  return [];
 }
 
 function heuristic(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  // 🧮 Distância diagonal
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 }
 
 function reconstructPath(cameFrom, current) {
