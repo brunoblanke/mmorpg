@@ -1,127 +1,182 @@
 import {
-  canvas, ctx, player, camera, tileSize, enemies
+  player, walls, enemies, camera, canvas
 } from './canvas-config.js';
 
-import {
-  updatePlayerMovement,
-  updateCamera,
-  handleClickDestination,
-  handleDirectionalInput,
-  releaseInput,
-  __movementQueue__
-} from './canvas-movement.js';
+import { tileSize, gridSize } from './canvas-config.js';
 
-import {
-  drawGrid,
-  drawWalls,
-  drawPlayer,
-  drawEnemies,
-  drawFloatingTexts,
-  drawXPBar
-} from './canvas-draw.js';
+export const __movementQueue__ = [];
 
-import { updateEnemyMovements } from './canvas-enemies.js';
-import {
-  checkEnemyAttacks,
-  checkPlayerAttack,
-  updateFloatingTexts
-} from './combat-engine.js';
-
-let targetTile = null;
-let pressedKeys = {};
-
-canvas.addEventListener('click', e => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const tx = Math.floor((mx + camera.x) / tileSize);
-  const ty = Math.floor((my + camera.y) / tileSize);
-
-  const clickedEnemy = enemies.find(en => en.x === tx && en.y === ty && !en.dead);
-
-  if (clickedEnemy) {
-    player.targetEnemy = clickedEnemy;
-    player.target = null;
-    player.targetPath = null;
-    targetTile = null;
-  } else {
-    player.targetEnemy = null;
-    handleClickDestination(tx, ty);
-    targetTile = { x: tx, y: ty };
-  }
-});
-
-window.addEventListener('keydown', e => {
-  pressedKeys[e.key] = true;
-
-  const input = {
-    ArrowUp: [0, -1], ArrowDown: [0, 1],
-    ArrowLeft: [-1, 0], ArrowRight: [1, 0],
-    w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0]
-  };
-
-  const activeDirs = Object.entries(input)
-    .filter(([key]) => pressedKeys[key])
-    .map(([, dir]) => dir);
-
-  if (activeDirs.length >= 1) {
-    const dx = activeDirs.reduce((sum, dir) => sum + dir[0], 0);
-    const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
-    handleDirectionalInput(dx, dy);
-    targetTile = null;
-  }
-});
-
-window.addEventListener('keyup', e => {
-  delete pressedKeys[e.key];
-  releaseInput();
-});
-
-function drawTargetMarker() {
-  if (!targetTile) return;
-
-  ctx.strokeStyle = '#00ffcc';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(
-    targetTile.x * tileSize - camera.x + tileSize / 2,
-    targetTile.y * tileSize - camera.y + tileSize / 2,
-    tileSize / 3,
-    0, Math.PI * 2
+function isBlocked(x, y) {
+  return (
+    x < 0 || x >= gridSize || y < 0 || y >= gridSize ||
+    walls.some(w => w.x === x && w.y === y) ||
+    enemies.some(e => e.x === x && e.y === y && !e.dead) ||
+    (player.x === x && player.y === y)
   );
-  ctx.stroke();
 }
 
-function drawPathShadow() {
-  ctx.fillStyle = 'rgba(0, 255, 255, 0.2)';
-  for (const step of __movementQueue__) {
-    ctx.fillRect(
-      step.x * tileSize - camera.x,
-      step.y * tileSize - camera.y,
-      tileSize, tileSize
-    );
+export function tryMove(entity, dx, dy) {
+  const nx = entity.x + dx;
+  const ny = entity.y + dy;
+
+  if (isBlocked(nx, ny)) return false;
+
+  entity.x = nx;
+  entity.y = ny;
+  return true;
+}
+
+export function getEntityCooldown(entity) {
+  return Math.max(10, 60 - entity.spd * 5);
+}
+
+export function updateCamera() {
+  camera.x = player.x * tileSize - canvas.width / 2 + tileSize / 2;
+  camera.y = player.y * tileSize - canvas.height / 2 + tileSize / 2;
+}
+
+export function handleClickDestination(tx, ty) {
+  player.targetEnemy = null;
+  const path = findPath(player.x, player.y, tx, ty);
+  player.targetPath = path;
+  __movementQueue__.length = 0;
+  if (path) __movementQueue__.push(...path);
+  console.log('Destino clicado:', tx, ty);
+  console.log('Rota calculada:', path);
+}
+
+export function handleDirectionalInput(dx, dy) {
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+
+  if (!isBlocked(nx, ny)) {
+    player.x = nx;
+    player.y = ny;
+  }
+
+  player.targetEnemy = null;
+  player.targetPath = null;
+  __movementQueue__.length = 0;
+  console.log('Movimento manual:', dx, dy);
+}
+
+export function releaseInput() {}
+
+export function updatePlayerMovement() {
+  if (player.cooldown > 0) {
+    player.cooldown--;
+    return;
+  }
+
+  // 🔍 Perseguindo inimigo com path recalculado
+  if (player.targetEnemy && !player.targetEnemy.dead) {
+    console.log('Perseguindo inimigo:', player.targetEnemy.id);
+    const tx = player.targetEnemy.x;
+    const ty = player.targetEnemy.y;
+
+    const path = findPath(player.x, player.y, tx, ty);
+    console.log('Path para alvo:', path);
+
+    if (path && path.length > 0) {
+      const next = path[0];
+      if (!isBlocked(next.x, next.y)) {
+        player.x = next.x;
+        player.y = next.y;
+        player.cooldown = 8;
+        player.targetPath = path;
+        __movementQueue__.length = 0;
+        __movementQueue__.push(...path);
+        console.log('Avançando para:', next.x, next.y);
+        return;
+      } else {
+        console.log('Tile bloqueado:', next.x, next.y);
+        player.targetPath = null;
+      }
+    } else {
+      console.log('Nenhuma rota possível para perseguir');
+    }
+  }
+
+  // 🖱️ Caminho clicado
+  if (player.targetPath && player.targetPath.length > 0) {
+    const next = player.targetPath.shift();
+    if (!isBlocked(next.x, next.y)) {
+      player.x = next.x;
+      player.y = next.y;
+      player.cooldown = 8;
+      console.log('Movendo via clique para:', next.x, next.y);
+    } else {
+      console.log('Bloqueado no caminho clicado:', next.x, next.y);
+      player.targetPath = null;
+    }
   }
 }
 
-function gameLoop() {
-  updatePlayerMovement();
-  updateEnemyMovements();
-  checkEnemyAttacks();
-  checkPlayerAttack();
-  updateFloatingTexts();
-  updateCamera();
+function findPath(startX, startY, targetX, targetY) {
+  const open = [];
+  const closed = new Set();
+  const cameFrom = {};
+  const gScore = {};
+  const fScore = {};
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawXPBar();
-  drawGrid();
-  drawWalls();
-  drawPathShadow();
-  drawEnemies();
-  drawPlayer(player);
-  drawTargetMarker();
-  drawFloatingTexts();
+  const startKey = `${startX},${startY}`;
+  gScore[startKey] = 0;
+  fScore[startKey] = heuristic(startX, startY, targetX, targetY);
+  open.push({ x: startX, y: startY, key: startKey });
 
-  requestAnimationFrame(gameLoop);
+  const directions = [
+    [0,1],[1,0],[0,-1],[-1,0],
+    [1,1],[1,-1],[-1,1],[-1,-1]
+  ];
+
+  while (open.length > 0) {
+    open.sort((a, b) => fScore[a.key] - fScore[b.key]);
+    const current = open.shift();
+    const { x, y, key } = current;
+
+    if (x === targetX && y === targetY) {
+      return reconstructPath(cameFrom, key);
+    }
+
+    closed.add(key);
+
+    for (const [dx, dy] of directions) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const neighborKey = `${nx},${ny}`;
+
+      if (isBlocked(nx, ny) || closed.has(neighborKey)) continue;
+
+      const tentativeG = gScore[key] + ((dx !== 0 && dy !== 0) ? 1.4 : 1);
+
+      if (
+        !gScore.hasOwnProperty(neighborKey) ||
+        tentativeG < gScore[neighborKey]
+      ) {
+        cameFrom[neighborKey] = key;
+        gScore[neighborKey] = tentativeG;
+        fScore[neighborKey] = tentativeG + heuristic(nx, ny, targetX, targetY);
+
+        if (!open.some(n => n.key === neighborKey)) {
+          open.push({ x: nx, y: ny, key: neighborKey });
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
-requestAnimationFrame(gameLoop);
+function heuristic(x1, y1, x2, y2) {
+  return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
+}
+
+function reconstructPath(cameFrom, currentKey) {
+  const path = [];
+  while (cameFrom[currentKey]) {
+    const [x, y] = currentKey.split(',').map(Number);
+    path.unshift({ x, y });
+    currentKey = cameFrom[currentKey];
+  }
+  return path;
+}
