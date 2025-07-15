@@ -10,7 +10,11 @@ function isBlocked(x, y) {
   return (
     x < 0 || x >= gridSize || y < 0 || y >= gridSize ||
     walls.some(w => w.x === x && w.y === y) ||
-    enemies.some(e => e.x === x && e.y === y && !e.dead) ||
+    enemies.some(e =>
+      e.x === x && e.y === y &&
+      !e.dead &&
+      !(player.targetEnemy && e === player.targetEnemy)
+    ) ||
     (player.x === x && player.y === y)
   );
 }
@@ -41,6 +45,8 @@ export function handleClickDestination(tx, ty) {
   player.targetPath = path;
   __movementQueue__.length = 0;
   if (path) __movementQueue__.push(...path);
+  console.log('🖱️ Destino clicado:', tx, ty);
+  console.log('📍 Rota calculada:', path);
 }
 
 export function handleDirectionalInput(dx, dy) {
@@ -55,12 +61,14 @@ export function handleDirectionalInput(dx, dy) {
   player.targetEnemy = null;
   player.targetPath = null;
   __movementQueue__.length = 0;
+  console.log('⌨️ Movimento manual:', dx, dy);
 }
 
 export function releaseInput() {}
 
 export function updatePlayerMovement() {
   if (player.health <= 0) {
+    console.log('💀 Player está morto. Resetando alvos.');
     player.targetEnemy = null;
     player.targetPath = null;
     __movementQueue__.length = 0;
@@ -74,21 +82,25 @@ export function updatePlayerMovement() {
 
   // 🟩 Regeneração na zona segura
   const isInSafeZone = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
-  if (isInSafeZone && player.health < player.maxHealth) {
-    player.health += 1;
-    if (player.health > player.maxHealth) {
-      player.health = player.maxHealth;
+  if (isInSafeZone) {
+    console.log('🛡️ Player está na zona segura.');
+    if (player.health < player.maxHealth) {
+      player.health += 1;
+      if (player.health > player.maxHealth) player.health = player.maxHealth;
+      console.log('❤️ Regenerando vida... HP:', player.health);
     }
   }
 
-  // 🔍 Perseguindo inimigo com path até tile vizinho livre
+  // 🔍 Perseguindo inimigo com path até tile vizinho
   if (player.targetEnemy && !player.targetEnemy.dead) {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
 
+    console.log('🎯 Perseguindo inimigo:', player.targetEnemy.id, `(${tx},${ty})`);
     const adjacentTiles = getAdjacentFreeTiles(tx, ty);
-    let bestPath = null;
+    console.log('🔎 Tiles vizinhos livres:', adjacentTiles);
 
+    let bestPath = null;
     for (const tile of adjacentTiles) {
       const path = findPath(player.x, player.y, tile.x, tile.y);
       if (path && (!bestPath || path.length < bestPath.length)) {
@@ -105,20 +117,27 @@ export function updatePlayerMovement() {
         player.targetPath = bestPath;
         __movementQueue__.length = 0;
         __movementQueue__.push(...bestPath);
+        console.log('👣 Player avançando para:', next);
         return;
       } else {
+        console.log('🚫 Tile bloqueado:', next);
         player.targetPath = null;
       }
+    } else {
+      console.log('⚠️ Nenhum caminho válido para cercar o inimigo.');
     }
   }
 
+  // 👣 Movimento por clique
   if (player.targetPath && player.targetPath.length > 0) {
     const next = player.targetPath.shift();
     if (!isBlocked(next.x, next.y)) {
       player.x = next.x;
       player.y = next.y;
       player.cooldown = 8;
+      console.log('🧭 Caminho clicado → andando para:', next);
     } else {
+      console.log('🚫 Caminho interrompido em:', next);
       player.targetPath = null;
     }
   }
