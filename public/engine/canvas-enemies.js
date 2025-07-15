@@ -1,131 +1,72 @@
-import { enemies, player, safeZone } from './canvas-config.js';
-import { tryMove, getEntityCooldown } from './canvas-movement.js';
-
-function distance(a, b) {
-  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-}
-
-function getSurroundTiles(target) {
-  return [
-    { x: target.x + 1, y: target.y },
-    { x: target.x - 1, y: target.y },
-    { x: target.x, y: target.y + 1 },
-    { x: target.x, y: target.y - 1 },
-    { x: target.x + 1, y: target.y + 1 },
-    { x: target.x - 1, y: target.y - 1 },
-    { x: target.x + 1, y: target.y - 1 },
-    { x: target.x - 1, y: target.y + 1 }
-  ];
-}
+import { enemies, player } from './canvas-config.js';
+import { isBlocked, getEntityCooldown, tryMove } from './canvas-movement.js';
 
 export function updateEnemyMovements() {
-  const occupiedTiles = enemies.map(e => `${e.x},${e.y}`);
-  const playerIsInSafe = safeZone.some(tile => tile.x === player.x && tile.y === player.y);
+  for (const enemy of enemies) {
+    if (enemy.dead || enemy.health <= 0) continue;
 
-  for (const e of enemies) {
-    if (e.dead) continue;                // 🧟‍♂️ Mortos não se movem
-    if (e.cooldown > 0) {
-      e.cooldown--;
+    if (enemy.cooldown > 0) {
+      enemy.cooldown--;
       continue;
     }
 
-    const dist = distance(e, player);
-    const isChasing = !playerIsInSafe && dist <= 5;
+    const dx = player.x - enemy.x;
+    const dy = player.y - enemy.y;
+    const distX = Math.abs(dx);
+    const distY = Math.abs(dy);
 
-    const type = e.id.toLowerCase();
-    let strategy = 'default';
-    if (type.includes('troll') || type.includes('orc')) strategy = 'closeAggressive';
-    if (type.includes('mago') || type.includes('elemental')) strategy = 'ranged';
+    const isAdjacent =
+      (distX <= 1 && distY <= 1) &&
+      !(distX === 0 && distY === 0);
 
-    let moved = false;
-
-    // 🧙 Magos mantêm distância ideal
-    if (strategy === 'ranged' && isChasing) {
-      const idealDist = 6;
-
-      if (dist < idealDist - 1 && Math.random() < 0.1) {
-        const dx = Math.sign(e.x - player.x);
-        const dy = Math.sign(e.y - player.y);
-        moved = tryMove(e, dx, dy);
-      } else if (dist > idealDist + 1 && Math.random() < 0.1) {
-        const dx = Math.sign(player.x - e.x);
-        const dy = Math.sign(player.y - e.y);
-        moved = tryMove(e, dx, dy);
-      } else if (Math.random() < 0.05) {
-        const dx = Math.floor(Math.random() * 3) - 1;
-        const dy = Math.floor(Math.random() * 3) - 1;
-        moved = tryMove(e, dx, dy);
+    if (isAdjacent) {
+      // 🧱 Modo cercamento: tenta alinhar lateralmente se possível
+      if (Math.abs(dx) > 0 && tryMove(enemy, Math.sign(dx), 0)) {
+        enemy.cooldown = getEntityCooldown(enemy);
+        continue;
       }
-    }
-
-    // ⚔️ Corpo-a-corpo em cerco
-    else if (isChasing) {
-      const surround = getSurroundTiles(player)
-        .filter(pos => !occupiedTiles.includes(`${pos.x},${pos.y}`))
-        .sort((a, b) => distance(e, a) - distance(e, b));
-
-      if (surround.length > 0 && Math.random() < 0.04) {
-        for (const pos of surround) {
-          const dx = pos.x - e.x;
-          const dy = pos.y - e.y;
-          if (tryMove(e, dx, dy)) {
-            occupiedTiles.push(`${e.x},${e.y}`);
-            moved = true;
-            break;
-          }
-        }
-      } else if (Math.random() < 0.02) {
-        const dx = Math.sign(player.x - e.x);
-        const dy = Math.sign(player.y - e.y);
-        const nx = e.x + dx;
-        const ny = e.y + dy;
-
-        if (!occupiedTiles.includes(`${nx},${ny}`)) {
-          moved = tryMove(e, dx, dy);
-          if (moved) occupiedTiles.push(`${e.x},${e.y}`);
-        }
+      if (Math.abs(dy) > 0 && tryMove(enemy, 0, Math.sign(dy))) {
+        enemy.cooldown = getEntityCooldown(enemy);
+        continue;
       }
+      continue; // Não há espaço para mover
     }
 
-    // 🧍 Patrulha quando não está perseguindo
-    if (!isChasing && !moved) {
-      const moveChance = strategy === 'ranged' ? 0.15 : 0.5;
-      if (Math.random() < moveChance) {
-        if (!e.patrolArea || e._justStoppedChasing) {
-          const px = e.x;
-          const py = e.y;
-          const range = 2;
-
-          e.patrolArea = {
-            x1: Math.max(0, px - range),
-            y1: Math.max(0, py - range),
-            x2: Math.min(49, px + range),
-            y2: Math.min(49, py + range)
-          };
-
-          e._justStoppedChasing = false;
-        }
-
-        const dx = Math.floor(Math.random() * 3) - 1;
-        const dy = Math.floor(Math.random() * 3) - 1;
-        const nx = e.x + dx;
-        const ny = e.y + dy;
-
-        if (
-          nx >= e.patrolArea.x1 && nx <= e.patrolArea.x2 &&
-          ny >= e.patrolArea.y1 && ny <= e.patrolArea.y2 &&
-          !occupiedTiles.includes(`${nx},${ny}`)
-        ) {
-          moved = tryMove(e, dx, dy);
-        }
-      }
+    // 👣 Modo deslocamento: move em direção ao player
+    const bestMove = getBestStepTowards(enemy.x, enemy.y, player.x, player.y);
+    if (bestMove && !isBlocked(bestMove.x, bestMove.y)) {
+      enemy.x = bestMove.x;
+      enemy.y = bestMove.y;
+      enemy.cooldown = getEntityCooldown(enemy);
     }
-
-    if (moved) {
-      e.cooldown = getEntityCooldown(e);
-    }
-
-    e._justStoppedChasing = !isChasing && (e._wasChasing ?? false);
-    e._wasChasing = isChasing;
   }
+}
+
+function getBestStepTowards(sx, sy, tx, ty) {
+  const steps = [
+    { x: sx + 1, y: sy },
+    { x: sx - 1, y: sy },
+    { x: sx, y: sy + 1 },
+    { x: sx, y: sy - 1 },
+    { x: sx + 1, y: sy + 1 },
+    { x: sx - 1, y: sy - 1 },
+    { x: sx + 1, y: sy - 1 },
+    { x: sx - 1, y: sy + 1 }
+  ];
+
+  let best = null;
+  let bestScore = Infinity;
+
+  for (const step of steps) {
+    const dx = step.x - tx;
+    const dy = step.y - ty;
+    const score = Math.abs(dx) + Math.abs(dy);
+
+    if (score < bestScore) {
+      best = step;
+      bestScore = score;
+    }
+  }
+
+  return best;
 }
