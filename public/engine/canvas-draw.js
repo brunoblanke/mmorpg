@@ -52,7 +52,7 @@ export function drawGrid() {
     }
   }
 
-  // 🔵 Área de detecção circular
+  // 🟡 Área de detecção com borda circular
   for (const enemy of enemies) {
     if (enemy.dead) continue;
 
@@ -61,14 +61,15 @@ export function drawGrid() {
     if (enemy.level === 1) range = 3;
     if (type.includes('mago') || type.includes('elemental')) range = 10;
 
-    ctx.fillStyle = 'rgba(255, 255, 0, 0.05)';
     const centerX = enemy.x * tileSize - camera.x + tileSize / 2;
     const centerY = enemy.y * tileSize - camera.y + tileSize / 2;
-    const pixelRadius = range * tileSize;
+    const radius = range * tileSize;
 
+    ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, pixelRadius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.stroke();
   }
 }
 
@@ -154,4 +155,20 @@ export function drawFloatingTexts() {
       text.y * tileSize - camera.y + tileSize / 2
     );
   }
+}
+
+export function drawXPBar() {
+  const maxXP = player.level * 100;
+  const ratio = Math.min(player.xp / maxXP, 1);
+
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, canvas.width, 20);
+
+  ctx.fillStyle = '#00ccff';
+  ctx.fillRect(0, 0, canvas.width * ratio, 20);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillText(`XP: ${player.xp} / ${maxXP}`, canvas.width / 2, 14);
 }
