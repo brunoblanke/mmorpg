@@ -70,7 +70,7 @@ window.addEventListener('keydown', e => {
     const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
     handleDirectionalInput(dx, dy);
     targetTile = null;
-    player.targetEnemy = null;
+    player.targetEnemy = null; // 🛑 cancela perseguição ao mover manualmente
   }
 });
 
@@ -105,6 +105,29 @@ function drawPathShadow() {
   }
 }
 
+function drawFollowBorders() {
+  if (player.targetEnemy && !player.targetEnemy.dead) {
+    // 🟩 borda verde em torno do inimigo sendo seguido
+    const target = player.targetEnemy;
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      target.x * tileSize - camera.x,
+      target.y * tileSize - camera.y,
+      tileSize, tileSize
+    );
+
+    // 🟩 borda verde em torno do player
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      player.x * tileSize - camera.x,
+      player.y * tileSize - camera.y,
+      tileSize, tileSize
+    );
+  }
+}
+
 function gameLoop() {
   updatePlayerMovement();
   updateEnemyMovements();
@@ -120,6 +143,7 @@ function gameLoop() {
   drawPathShadow();
   drawEnemies();
   drawPlayer(player);
+  drawFollowBorders();      // 🟩 bordas de perseguição
   drawTargetMarker();
   drawFloatingTexts();
 
