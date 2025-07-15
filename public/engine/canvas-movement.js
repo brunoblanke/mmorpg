@@ -1,3 +1,74 @@
+function findPath(startX, startY, targetX, targetY) {
+  const open = [];
+  const closed = new Set();
+  const cameFrom = {};
+  const gScore = {};
+  const fScore = {};
+
+  const startKey = `${startX},${startY}`;
+  gScore[startKey] = 0;
+  fScore[startKey] = heuristic(startX, startY, targetX, targetY);
+  open.push({ x: startX, y: startY, key: startKey });
+
+  const directions = [
+    [0,1],[1,0],[0,-1],[-1,0],      // ortogonais
+    [1,1],[1,-1],[-1,1],[-1,-1]     // diagonais
+  ];
+
+  while (open.length > 0) {
+    open.sort((a, b) => fScore[a.key] - fScore[b.key]);
+    const current = open.shift();
+    const { x, y, key } = current;
+
+    if (x === targetX && y === targetY) {
+      return reconstructPath(cameFrom, key);
+    }
+
+    closed.add(key);
+
+    for (const [dx, dy] of directions) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const neighborKey = `${nx},${ny}`;
+
+      if (isBlocked(nx, ny) || closed.has(neighborKey)) continue;
+
+      const tentativeG = gScore[key] + ((dx !== 0 && dy !== 0) ? 1.4 : 1);
+
+      if (
+        !gScore.hasOwnProperty(neighborKey) ||
+        tentativeG < gScore[neighborKey]
+      ) {
+        cameFrom[neighborKey] = key;
+        gScore[neighborKey] = tentativeG;
+        fScore[neighborKey] = tentativeG + heuristic(nx, ny, targetX, targetY);
+
+        if (!open.some(n => n.key === neighborKey)) {
+          open.push({ x: nx, y: ny, key: neighborKey });
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function heuristic(x1, y1, x2, y2) {
+  const dx = Math.abs(x1 - x2);
+  const dy = Math.abs(y1 - y2);
+  return Math.max(dx, dy); // distancia de Chebyshev (diagonal friendly)
+}
+
+function reconstructPath(cameFrom, currentKey) {
+  const path = [];
+  while (cameFrom[currentKey]) {
+    const [x, y] = currentKey.split(',').map(Number);
+    path.unshift({ x, y });
+    currentKey = cameFrom[currentKey];
+  }
+  return path;
+}
+
 import {
   player, walls, enemies, camera, canvas
 } from './canvas-config.js';
@@ -58,7 +129,7 @@ export function handleDirectionalInput(dx, dy) {
 }
 
 export function releaseInput() {
-  // reservado pra futuras animações
+  // reservado
 }
 
 export function updatePlayerMovement() {
@@ -86,66 +157,4 @@ export function updatePlayerMovement() {
       player.targetPath = null;
     }
   }
-}
-
-function findPath(startX, startY, targetX, targetY) {
-  const open = [];
-  const closed = new Set();
-  const cameFrom = {};
-  const gScore = {};
-  const fScore = {};
-
-  const startKey = `${startX},${startY}`;
-  gScore[startKey] = 0;
-  fScore[startKey] = heuristic(startX, startY, targetX, targetY);
-  open.push({ x: startX, y: startY, key: startKey });
-
-  while (open.length > 0) {
-    open.sort((a, b) => fScore[a.key] - fScore[b.key]);
-    const current = open.shift();
-    const { x, y, key } = current;
-
-    if (x === targetX && y === targetY) {
-      return reconstructPath(cameFrom, key);
-    }
-
-    closed.add(key);
-    for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0]]) {
-      const nx = x + dx;
-      const ny = y + dy;
-      const neighborKey = `${nx},${ny}`;
-
-      if (isBlocked(nx, ny) || closed.has(neighborKey)) continue;
-
-      const tentativeG = gScore[key] + 1;
-
-      if (
-        !gScore.hasOwnProperty(neighborKey) ||
-        tentativeG < gScore[neighborKey]
-      ) {
-        cameFrom[neighborKey] = key;
-        gScore[neighborKey] = tentativeG;
-        fScore[neighborKey] = tentativeG + heuristic(nx, ny, targetX, targetY);
-        if (!open.some(n => n.key === neighborKey)) {
-          open.push({ x: nx, y: ny, key: neighborKey });
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
-function heuristic(x1, y1, x2, y2) {
-  return Math.abs(x1 - x2) + Math.abs(y1 - y2);
-}
-
-function reconstructPath(cameFrom, currentKey) {
-  const path = [];
-  while (cameFrom[currentKey]) {
-    const [x, y] = currentKey.split(',').map(Number);
-    path.unshift({ x, y });
-    currentKey = cameFrom[currentKey];
-  }
-  return path;
 }
