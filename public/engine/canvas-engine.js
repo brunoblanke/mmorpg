@@ -1,5 +1,5 @@
 import {
-  canvas, ctx, player, camera, tileSize
+  canvas, ctx, player, camera, tileSize, enemies
 } from './canvas-config.js';
 
 import {
@@ -27,8 +27,6 @@ import {
   updateFloatingTexts
 } from './combat-engine.js';
 
-import { enemies } from './canvas-config.js';
-
 let targetTile = null;
 let pressedKeys = {};
 
@@ -44,6 +42,7 @@ canvas.addEventListener('click', e => {
   if (clickedEnemy) {
     player.targetEnemy = clickedEnemy;
     player.target = null;
+    player.targetPath = null;
     targetTile = null;
   } else {
     player.targetEnemy = null;
@@ -70,7 +69,6 @@ window.addEventListener('keydown', e => {
     const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
     handleDirectionalInput(dx, dy);
     targetTile = null;
-    player.targetEnemy = null;
   }
 });
 
