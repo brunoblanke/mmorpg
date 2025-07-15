@@ -41,6 +41,8 @@ export function handleClickDestination(tx, ty) {
   player.targetPath = path;
   __movementQueue__.length = 0;
   if (path) __movementQueue__.push(...path);
+  console.log('Destino clicado:', tx, ty);
+  console.log('Rota:', path);
 }
 
 export function handleDirectionalInput(dx, dy) {
@@ -55,6 +57,7 @@ export function handleDirectionalInput(dx, dy) {
   player.targetEnemy = null;
   player.targetPath = null;
   __movementQueue__.length = 0;
+  console.log('Movimento manual:', dx, dy);
 }
 
 export function releaseInput() {}
@@ -65,12 +68,14 @@ export function updatePlayerMovement() {
     return;
   }
 
-  // 🧿 Perseguindo inimigo-alvo com path recalculado constantemente
   if (player.targetEnemy && !player.targetEnemy.dead) {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
+    console.log('Perseguindo:', player.targetEnemy.id, 'Posição:', tx, ty);
 
     const path = findPath(player.x, player.y, tx, ty);
+    console.log('Rota gerada:', path);
+
     if (path && path.length > 0) {
       const next = path[0];
       if (!isBlocked(next.x, next.y)) {
@@ -80,21 +85,26 @@ export function updatePlayerMovement() {
         player.targetPath = path;
         __movementQueue__.length = 0;
         __movementQueue__.push(...path);
+        console.log('Movido para:', next.x, next.y);
         return;
       } else {
+        console.log('Tile bloqueado:', next.x, next.y);
         player.targetPath = null;
       }
+    } else {
+      console.log('Sem rota possível para perseguição.');
     }
   }
 
-  // 👣 Movimento por clique direto
   if (player.targetPath && player.targetPath.length > 0) {
     const next = player.targetPath.shift();
     if (!isBlocked(next.x, next.y)) {
       player.x = next.x;
       player.y = next.y;
       player.cooldown = 8;
+      console.log('Movendo via clique para:', next.x, next.y);
     } else {
+      console.log('Caminho bloqueado:', next.x, next.y);
       player.targetPath = null;
     }
   }
@@ -128,7 +138,7 @@ function findPath(startX, startY, targetX, targetY) {
 
     closed.add(key);
 
-    for (const [dx, dy] of directions) {
+        for (const [dx, dy] of directions) {
       const nx = x + dx;
       const ny = y + dy;
       const neighborKey = `${nx},${ny}`;

@@ -44,6 +44,7 @@ canvas.addEventListener('click', e => {
     player.target = null;
     player.targetPath = null;
     targetTile = null;
+    console.log('Inimigo clicado:', clickedEnemy.id);
   } else {
     player.targetEnemy = null;
     handleClickDestination(tx, ty);
