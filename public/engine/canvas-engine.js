@@ -16,7 +16,8 @@ import {
   drawWalls,
   drawPlayer,
   drawEnemies,
-  drawFloatingTexts
+  drawFloatingTexts,
+  drawXPBar
 } from './canvas-draw.js';
 
 import { updateEnemyMovements } from './canvas-enemies.js';
@@ -113,6 +114,7 @@ function gameLoop() {
   updateCamera();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawXPBar();
   drawGrid();
   drawWalls();
   drawPathShadow();
