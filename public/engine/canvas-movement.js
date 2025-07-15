@@ -57,9 +57,7 @@ export function handleDirectionalInput(dx, dy) {
   __movementQueue__.length = 0;
 }
 
-export function releaseInput() {
-  // reservado pra futuras animações ou efeitos
-}
+export function releaseInput() {}
 
 export function updatePlayerMovement() {
   if (player.cooldown > 0) {
@@ -67,20 +65,29 @@ export function updatePlayerMovement() {
     return;
   }
 
-  // 🔍 Perseguindo inimigo-alvo
+  // 🧿 Perseguindo inimigo-alvo com path recalculado constantemente
   if (player.targetEnemy && !player.targetEnemy.dead) {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
-    const path = findPath(player.x, player.y, tx, ty);
 
+    const path = findPath(player.x, player.y, tx, ty);
     if (path && path.length > 0) {
-      player.targetPath = path;
-      __movementQueue__.length = 0;
-      __movementQueue__.push(...path);
+      const next = path[0];
+      if (!isBlocked(next.x, next.y)) {
+        player.x = next.x;
+        player.y = next.y;
+        player.cooldown = 8;
+        player.targetPath = path;
+        __movementQueue__.length = 0;
+        __movementQueue__.push(...path);
+        return;
+      } else {
+        player.targetPath = null;
+      }
     }
   }
 
-  // 👣 Executando movimento no caminho
+  // 👣 Movimento por clique direto
   if (player.targetPath && player.targetPath.length > 0) {
     const next = player.targetPath.shift();
     if (!isBlocked(next.x, next.y)) {
@@ -106,8 +113,8 @@ function findPath(startX, startY, targetX, targetY) {
   open.push({ x: startX, y: startY, key: startKey });
 
   const directions = [
-    [0,1],[1,0],[0,-1],[-1,0],     // ortogonais
-    [1,1],[1,-1],[-1,1],[-1,-1]    // diagonais
+    [0,1],[1,0],[0,-1],[-1,0],
+    [1,1],[1,-1],[-1,1],[-1,-1]
   ];
 
   while (open.length > 0) {
