@@ -52,29 +52,23 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Área de detecção
+  // 🔵 Área de detecção circular
   for (const enemy of enemies) {
     if (enemy.dead) continue;
+
     const type = enemy.id.toLowerCase();
     let range = 5;
     if (enemy.level === 1) range = 3;
     if (type.includes('mago') || type.includes('elemental')) range = 10;
 
     ctx.fillStyle = 'rgba(255, 255, 0, 0.05)';
-    for (let y = enemy.y - range; y <= enemy.y + range; y++) {
-      for (let x = enemy.x - range; x <= enemy.x + range; x++) {
-        if (
-          x >= 0 && y >= 0 && x < gridSize && y < gridSize &&
-          Math.abs(x - enemy.x) + Math.abs(y - enemy.y) <= range
-        ) {
-          ctx.fillRect(
-            x * tileSize - camera.x,
-            y * tileSize - camera.y,
-            tileSize, tileSize
-          );
-        }
-      }
-    }
+    const centerX = enemy.x * tileSize - camera.x + tileSize / 2;
+    const centerY = enemy.y * tileSize - camera.y + tileSize / 2;
+    const pixelRadius = range * tileSize;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, pixelRadius, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
@@ -107,7 +101,7 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y - 6
   );
 
-  // 📊 Atributos e XP
+  // 📊 Atributos
   ctx.fillText(
     `LV:${entity.level} HP:${entity.health} XP:${entity.xp ?? 0}`,
     entity.x * tileSize - camera.x + tileSize / 2,
