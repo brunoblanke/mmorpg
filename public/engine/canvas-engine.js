@@ -44,11 +44,12 @@ canvas.addEventListener('click', e => {
     player.target = null;
     player.targetPath = null;
     targetTile = null;
-    console.log('Inimigo clicado:', clickedEnemy.id);
+    console.log('🎯 Player começou a perseguir inimigo:', clickedEnemy.id);
   } else {
     player.targetEnemy = null;
     handleClickDestination(tx, ty);
     targetTile = { x: tx, y: ty };
+    console.log('🖱️ Destino clicado:', tx, ty);
   }
 });
 
@@ -70,6 +71,7 @@ window.addEventListener('keydown', e => {
     const dy = activeDirs.reduce((sum, dir) => sum + dir[1], 0);
     handleDirectionalInput(dx, dy);
     targetTile = null;
+    console.log('⌨️ Movimento manual acionado:', dx, dy);
   }
 });
 
@@ -105,7 +107,7 @@ function drawPathShadow() {
 }
 
 function gameLoop() {
-  updatePlayerMovement();
+  updatePlayerMovement();             // ✅ chamada garantida
   updateEnemyMovements();
   checkEnemyAttacks();
   checkPlayerAttack();
