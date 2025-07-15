@@ -10,7 +10,7 @@ function isBlocked(x, y) {
   return (
     x < 0 || x >= gridSize || y < 0 || y >= gridSize ||
     walls.some(w => w.x === x && w.y === y) ||
-    enemies.some(e => e.x === x && e.y === y && !e.dead) ||
+    enemies.some(e => e !== player.targetEnemy && e.x === x && e.y === y && !e.dead) ||
     (player.x === x && player.y === y)
   );
 }
@@ -41,8 +41,8 @@ export function handleClickDestination(tx, ty) {
   player.targetPath = path;
   __movementQueue__.length = 0;
   if (path) __movementQueue__.push(...path);
-  console.log('Destino clicado:', tx, ty);
-  console.log('Rota:', path);
+  console.log('🖱️ Destino clicado:', tx, ty);
+  console.log('Rota gerada:', path);
 }
 
 export function handleDirectionalInput(dx, dy) {
@@ -57,7 +57,7 @@ export function handleDirectionalInput(dx, dy) {
   player.targetEnemy = null;
   player.targetPath = null;
   __movementQueue__.length = 0;
-  console.log('Movimento manual:', dx, dy);
+  console.log('⌨️ Movimento manual:', dx, dy);
 }
 
 export function releaseInput() {}
@@ -71,10 +71,10 @@ export function updatePlayerMovement() {
   if (player.targetEnemy && !player.targetEnemy.dead) {
     const tx = player.targetEnemy.x;
     const ty = player.targetEnemy.y;
-    console.log('Perseguindo:', player.targetEnemy.id, 'Posição:', tx, ty);
+    console.log('🎯 Perseguindo inimigo:', player.targetEnemy.id, '→ Posição:', tx, ty);
 
     const path = findPath(player.x, player.y, tx, ty);
-    console.log('Rota gerada:', path);
+    console.log('🔄 Rota recalculada:', path);
 
     if (path && path.length > 0) {
       const next = path[0];
@@ -85,14 +85,14 @@ export function updatePlayerMovement() {
         player.targetPath = path;
         __movementQueue__.length = 0;
         __movementQueue__.push(...path);
-        console.log('Movido para:', next.x, next.y);
+        console.log('👣 Player moveu para:', next.x, next.y);
         return;
       } else {
-        console.log('Tile bloqueado:', next.x, next.y);
+        console.log('❌ Tile bloqueado:', next.x, next.y);
         player.targetPath = null;
       }
     } else {
-      console.log('Sem rota possível para perseguição.');
+      console.log('⚠️ Nenhuma rota possível para perseguição.');
     }
   }
 
@@ -102,15 +102,17 @@ export function updatePlayerMovement() {
       player.x = next.x;
       player.y = next.y;
       player.cooldown = 8;
-      console.log('Movendo via clique para:', next.x, next.y);
+      console.log('👣 Player moveu por caminho clicado:', next.x, next.y);
     } else {
-      console.log('Caminho bloqueado:', next.x, next.y);
+      console.log('❌ Caminho clicado bloqueado em:', next.x, next.y);
       player.targetPath = null;
     }
   }
 }
 
 function findPath(startX, startY, targetX, targetY) {
+  if (startX === targetX && startY === targetY) return [];
+
   const open = [];
   const closed = new Set();
   const cameFrom = {};
@@ -138,7 +140,7 @@ function findPath(startX, startY, targetX, targetY) {
 
     closed.add(key);
 
-        for (const [dx, dy] of directions) {
+    for (const [dx, dy] of directions) {
       const nx = x + dx;
       const ny = y + dy;
       const neighborKey = `${nx},${ny}`;
@@ -165,7 +167,7 @@ function findPath(startX, startY, targetX, targetY) {
   return null;
 }
 
-function heuristic(x1, y1, x2, y2) {
+function heuristic(x1, x2, y1, y2) {
   return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
 
