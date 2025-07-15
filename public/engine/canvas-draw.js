@@ -35,7 +35,7 @@ export function drawGrid() {
     );
   }
 
-  // 🔴 Área de patrulha
+  // 🔴 Patrulha
   ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
   for (const enemy of enemies) {
     if (enemy.dead) continue;
@@ -52,7 +52,7 @@ export function drawGrid() {
     }
   }
 
-  // 🟡 Área de detecção com borda circular
+  // 🟡 Detecção com borda circular
   for (const enemy of enemies) {
     if (enemy.dead) continue;
 
@@ -91,6 +91,21 @@ function drawEntityBase(entity, color) {
     entity.y * tileSize - camera.y,
     tileSize, tileSize
   );
+
+  // 🟩 Borda verde se estiver sendo perseguido
+  const isBeingFollowed =
+    entity === player && enemies.some(e => !e.dead && e.target === player) ||
+    entity !== player && player.targetEnemy === entity;
+
+  if (isBeingFollowed) {
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      entity.x * tileSize - camera.x,
+      entity.y * tileSize - camera.y,
+      tileSize, tileSize
+    );
+  }
 
   // 🏷️ Nome
   ctx.fillStyle = '#fff';
